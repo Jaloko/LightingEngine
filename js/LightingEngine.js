@@ -115,56 +115,54 @@ function LightingEngine(canvas) {
                 } else if(ii == 0) {
                     this.objects[i].bufferIndex = this.objectBuffers.length;
 
-            this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[i].bufferIndex]);
-/*            vertices = [
-                this.convertToMatrix(this.objects[i].width, true), this.convertToMatrix(this.objects[i].height, false),  0.0,
-                0,  this.convertToMatrix(this.objects[i].height, false),  0.0,
-                this.convertToMatrix(this.objects[i].width, true), 0,  0.0,
-                0, 0,  0.0,
-            ];*/
-            vertices = [];
+                    this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
+                    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[i].bufferIndex]);
+        /*            vertices = [
+                        this.convertToMatrix(this.objects[i].width, true), this.convertToMatrix(this.objects[i].height, false),  0.0,
+                        0,  this.convertToMatrix(this.objects[i].height, false),  0.0,
+                        this.convertToMatrix(this.objects[i].width, true), 0,  0.0,
+                        0, 0,  0.0,
+                    ];*/
+                    vertices = [];
 
+                    for(var v = 0; v < this.objects[i].vertices.length; v++) {
+                        vertices.push(this.convertToMatrix(this.objects[i].vertices[v].x, true), 
+                        this.convertToMatrix(this.objects[i].vertices[v].y, false),
+                        0.0);
 
-            for(var v = 0; v < this.objects[i].vertices.length; v++) {
-                vertices.push(this.convertToMatrix(this.objects[i].vertices[v].x, true), 
-                this.convertToMatrix(this.objects[i].vertices[v].y, false),
-                0.0);
+                        if(v % 3 == 1) {
+                            vertices.push(0.0, 0.0, 0.0); 
+                        }
 
-                if(v % 3 == 1) {
-                    vertices.push(0.0, 0.0, 0.0); 
+                    }
+                    var validation = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52];
+                    for(var val = 0; val < validation.length; val++) {
+                        if(this.objects[i].vertices.length == validation[val]) {
+                            vertices.push(0.0, 0.0, 0.0); 
+                            break; 
+                        }
+                    }
+
+                    vertices.push(this.convertToMatrix(this.objects[i].vertices[0].x, true));
+                    vertices.push(this.convertToMatrix(this.objects[i].vertices[0].y, false));
+                    vertices.push(0.0); 
+
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
+                    this.objectBuffers[this.objects[i].bufferIndex].itemSize = 3;
+                    this.objectBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3; 
+
+                    // Color vertices
+                    this.objectColourBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
+                    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[i].bufferIndex]);
+                    colors = [];
+                    for (var c = 0; c < vertices.length; c++) {
+                      colors = colors.concat([0.1, 0.1, 0.1, 1.0]);
+                    }
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
+                    this.objectColourBuffers[this.objects[i].bufferIndex].itemSize = 4;
+                    this.objectColourBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;
                 }
-
             }
-            var validation = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52];
-            for(var val = 0; val < validation.length; val++) {
-                if(this.objects[i].vertices.length == validation[val]) {
-                    vertices.push(0.0, 0.0, 0.0); 
-                    break; 
-                }
-            }
-
-            vertices.push(this.convertToMatrix(this.objects[i].vertices[0].x, true));
-            vertices.push(this.convertToMatrix(this.objects[i].vertices[0].y, false));
-            vertices.push(0.0); 
-
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
-            this.objectBuffers[this.objects[i].bufferIndex].itemSize = 3;
-            this.objectBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3; 
-
-            // Color vertices
-            this.objectColourBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[i].bufferIndex]);
-            colors = [];
-            for (var c = 0; c < vertices.length; c++) {
-              colors = colors.concat([0.1, 0.1, 0.1, 1.0]);
-            }
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-            this.objectColourBuffers[this.objects[i].bufferIndex].itemSize = 4;
-            this.objectColourBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;
-                }
-            }
-
         }
 
         console.log(this.objectBuffers.length);
@@ -219,18 +217,16 @@ function LightingEngine(canvas) {
         this.lights[this.lights.length - 1].blue = this.lightColour.b / this.lightIntensity;
     },
     this.render = function() {
-                this.gl.useProgram(this.shaderProgram);
-      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-/*        this.gl.clear(this.gl.COLOR_BUFFER_BIT);*/
+        this.gl.useProgram(this.shaderProgram);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         this.gl.enable(this.gl.STENCIL_TEST);
         for(var l = 0; l < this.lights.length; l++) {  
-                        var theVertices = [];       
+            var theVertices = [];       
             for(var o = 0; o < this.objects.length; o++) {
                 var vertices = this.objects[o].getVertices();
                 this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.REPLACE);
                 this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
                 this.gl.colorMask(false, false, false, false);
-
 
                 for(var v = 0; v < vertices.length; v++) {
                     var currentVertex = vertices[v];
@@ -246,34 +242,30 @@ function LightingEngine(canvas) {
                         var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
                         var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
 
-                        theVertices.push(this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
+                        theVertices.push(
+                            // Triangle 1
+                            this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
                             this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
                             this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-
+                            // Triangle 2
                             this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
                             this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
                             this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );
-
                     }
-
                 }
-
-
-
-        
             }
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
 
-                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(theVertices), this.gl.DYNAMIC_DRAW);
-                this.shadowBuffers[0].itemSize = 3;
-                this.shadowBuffers[0].numItems = theVertices.length / 3;
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(theVertices), this.gl.DYNAMIC_DRAW);
+            this.shadowBuffers[0].itemSize = 3;
+            this.shadowBuffers[0].numItems = theVertices.length / 3;
 
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
-                this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowColourBuffers[0]);
-                this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
-                this.setMatrixUniforms(this.shaderProgram); 
-                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.shadowBuffers[0].numItems);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowColourBuffers[0]);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.setMatrixUniforms(this.shaderProgram); 
+            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.shadowBuffers[0].numItems);
 
             this.gl.colorMask(true, true, true, true);
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
@@ -294,7 +286,6 @@ function LightingEngine(canvas) {
             this.lightBuffers[0].itemSize = 3;
             this.lightBuffers[0].numItems = 4; 
 
-     
             // Draw lights
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[0]);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.lightBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
@@ -306,8 +297,9 @@ function LightingEngine(canvas) {
             this.gl.clear(this.gl.STENCIL_BUFFER_BIT);
             
         }
+
         this.gl.disable(this.gl.STENCIL_TEST);
-                this.gl.useProgram(this.shaderProgram2);
+        this.gl.useProgram(this.shaderProgram2);
         for(var o = 0; o < this.objects.length; o++) {
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[o].bufferIndex]);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.objectBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
@@ -355,9 +347,6 @@ function LightingEngine(canvas) {
         this.lightColour = {
             r: r, g: g, b: b
         }
-/*        this.lights[this.lights.length - 1].red = this.lightColour.r;
-        this.lights[this.lights.length - 1].green = this.lightColour.g;
-        this.lights[this.lights.length - 1].blue = this.lightColour.b;*/
     },
     this.setLightIntensity = function(intensity) {
         if(intensity < 0) {
