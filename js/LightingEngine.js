@@ -1,7 +1,7 @@
 var time =  new Date().getTime();
 var fpsCount = 0;
 var fps = 0;
-var logFPS = false;
+var logFPS = true;
 
 function Light(x, y, red, green, blue) {
     this.location = {
@@ -33,14 +33,15 @@ function Light(x, y, red, green, blue) {
     }
 }*/
 
-function Polygon(x, y, faceSize, vertices, shadowVertices, requiresTexture) {
+function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.x = x,
     this.y = y,
     this.faceSize = faceSize,
     this.vertices = vertices,
     this.shadowVertices = shadowVertices,
     this.bufferIndex,
-    this.requiresTexture = requiresTexture,
+    this.textureURL = textureURL,
+    this.textureIndex,
     this.getVertices = function() {
 /*        var theVertices = [
             this.vertices[0].x + this.x, this.vertices[0].y + this.y, 0.0,
@@ -58,7 +59,7 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, requiresTexture) {
 
 function LightingEngine(canvas) {
     //Temporary
-    this.texture,
+    this.textures = [],
     //
     this.gl,
     this.canvas = canvas,
@@ -92,7 +93,7 @@ function LightingEngine(canvas) {
         // Probably Temporary
         this.initObjectsAndLights();
         this.initBuffers();
-        this.initTexture();
+        this.initTextures();
         this.prepareGL();
     },
     this.initGL = function() {
@@ -131,7 +132,7 @@ function LightingEngine(canvas) {
 
                     var vertices = [];
 
-                    if(this.objects[i].requiresTexture) {
+                    if(this.objects[i].textureURL != null) {
                         vertices = [
                             this.convertToMatrix(this.objects[i].faceSize, true), this.convertToMatrix(this.objects[i].faceSize, false),  0.0,
                             0,  this.convertToMatrix(this.objects[i].faceSize, false),  0.0,
@@ -169,7 +170,7 @@ function LightingEngine(canvas) {
                     this.objectBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;  
 
                     // Color vertices
-                    if(this.objects[i].requiresTexture == false) {
+                    if(this.objects[i].textureURL == null) {
                         this.objectColourBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
                         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[i].bufferIndex]);
                         colors = [];
@@ -180,8 +181,8 @@ function LightingEngine(canvas) {
                         this.objectColourBuffers[this.objects[i].bufferIndex].itemSize = 4;
                         this.objectColourBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;
                     } else {
-                        this.objectTextureBuffers[0] = this.gl.createBuffer();
-                        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[0]);
+                        this.objectTextureBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
+                        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[this.objects[i].bufferIndex]);
                         var textureCoords = [
                             1.0, 1.0,
                             0.0, 1.0,
@@ -189,10 +190,9 @@ function LightingEngine(canvas) {
                             0.0, 0.0,
                         ];
                         this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(textureCoords), this.gl.STATIC_DRAW);
-                        this.objectTextureBuffers[0].itemSize = 2;
-                        this.objectTextureBuffers[0].numItems = 4;
+                        this.objectTextureBuffers[this.objects[i].bufferIndex].itemSize = 2;
+                        this.objectTextureBuffers[this.objects[i].bufferIndex].numItems = 4;
                     }
-
                 }
             }
         }
@@ -213,22 +213,56 @@ function LightingEngine(canvas) {
 
         this.lightBuffers[0] = this.gl.createBuffer();
     },
-    this.initTexture = function() {
+    this.initTextures = function() {
         var self = this;
-        this.texture = this.gl.createTexture();
-        this.texture.image = new Image();
-        this.texture.image.onload = function() {
-            self.handleLoadedTexture(self.texture);
+        for(var o = 0; o < this.objects.length; o++) {
+            var createNew = true;
+            for(var t = 0; t < this.textures.length; t++) {
+                // Required for the equals check bellow
+                var temp = this.gl.createTexture();
+                temp.image = new Image();
+                temp.image.src = this.objects[o].textureURL;
+                //
+                if(temp.image.src == this.textures[t].image.src) {
+                    this.objects[o].textureIndex = t;
+                    createNew = false;
+                    break;
+                }
+            }
+            if(createNew == true) {
+                var texture = this.gl.createTexture();
+                this.textures.push(texture);
+                this.textures[this.textures.length -1].image = new Image();
+                this.textures[this.textures.length -1].image.onload = function() {
+                    for(var i = 0; i < self.textures.length; i++) {
+                        if(self.textures[i].hasLoaded == false) {
+                            self.handleLoadedTexture(self.textures[i]);
+                            break; 
+                        } 
+                    }
+                }
+                this.textures[this.textures.length -1].image.src = this.objects[o].textureURL; 
+                this.textures[this.textures.length -1].hasLoaded = false;
+                this.objects[o].textureIndex = this.textures.length -1;
+            }
         }
-        this.texture.image.src = "img/brick.png";
     },
     this.handleLoadedTexture = function(texture) {
         this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
+
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, texture.image);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+
+
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+
+
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        texture.hasLoaded = true;
     },
     this.prepareGL = function() {
        /* this.gl.enable(this.gl.STENCIL_TEST);*/
@@ -237,6 +271,11 @@ function LightingEngine(canvas) {
         mat4.ortho(this.pMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
         mat4.identity(this.mvMatrix);
         mat4.translate(this.mvMatrix, this.mvMatrix, [-1.0 , -1.0 , -1.0]);
+        this.gl.enable(this.gl.DEPTH_TEST);
+/*        This.gl.frontFace(this.gl.CW);
+        this.gl.enable(this.gl.CULL_FACE);*/
+        this.gl.enable(this.gl.STENCIL_TEST);
+
     },
     this.setMatrixUniforms = function(shaderProgram) {
         this.gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, this.pMatrix);
@@ -244,6 +283,7 @@ function LightingEngine(canvas) {
     },
     this.update = function() {
         fpsCount++;
+
         if(new Date().getTime() > time + 1000) {
             time += 1000;
             fps = fpsCount;
@@ -253,6 +293,7 @@ function LightingEngine(canvas) {
                 console.log("# of Lights: " + this.lights.length);
                 console.log("----------------");   
             }
+
         }
 
 
@@ -269,20 +310,20 @@ function LightingEngine(canvas) {
         this.gl.enable(this.gl.STENCIL_TEST);
         for(var l = 0; l < this.lights.length; l++) {  
             var theVertices = [];       
-                            this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.REPLACE);
-                this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
-                this.gl.colorMask(false, false, false, false);
+            this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.REPLACE);
+            this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
+            this.gl.colorMask(false, false, false, false);
+            this.gl.depthMask(false);
             for(var o = 0; o < this.objects.length; o++) {
                 var vertices = this.objects[o].getVertices();
-
-
                 for(var v = 0; v < vertices.length; v++) {
                     var currentVertex = vertices[v];
                     var nextVertex = vertices[(v + 1) % vertices.length]; 
                     var edge = Vector2f.sub(nextVertex, currentVertex);
                     var normal = {
-                        x: edge.y,
-                        y: -edge.x
+                        // Inverting these can allow/stop block blending
+                        x: -edge.y,
+                        y: edge.x
                     }
 
                     var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
@@ -346,14 +387,12 @@ function LightingEngine(canvas) {
             
         }
 
-        this.gl.useProgram(this.shaderProgram2);
-        this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
-         this.gl.stencilFunc(this.gl.EQUAL, 2, 1);
+
         for(var o = 0; o < this.objects.length; o++) {
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[o].bufferIndex]);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.objectBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
 
-            if(this.objects[o].requiresTexture == false) {
+            if(this.objects[o].textureURL == null) {
                 this.gl.useProgram(this.shaderProgram2);
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[o].bufferIndex]);
                 this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
@@ -362,10 +401,10 @@ function LightingEngine(canvas) {
                 this.setMatrixUniforms(this.shaderProgram2);  
             } else {
                 this.gl.useProgram(this.textureShaderProgram);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[0]);
-                this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[this.objects[o].bufferIndex]);
+                this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
                 this.gl.activeTexture(this.gl.TEXTURE0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+                this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[this.objects[o].textureIndex]);
                 this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
                 var matrixPos = this.convertVertToMatrix(this.objects[o].x, this.objects[o].y);
                 mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
@@ -374,8 +413,34 @@ function LightingEngine(canvas) {
 
             this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[this.objects[o].bufferIndex].numItems);
             mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
-
         }
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+
+
+        this.gl.useProgram(this.shaderProgram);
+        for(var l = 0; l < this.lights.length; l++) { 
+            this.gl.uniform2f(this.gl.getUniformLocation(this.shaderProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red / 3, this.lights[l].green / 3, this.lights[l].blue / 3);
+            this.gl.enable(this.gl.BLEND);
+            this.gl.blendFunc(this.gl.ONE, this.gl.ONE);  
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[0]);
+            vertices = [
+                this.convertToMatrix(this.lights[l].location.x + this.gl.viewportWidth, true), this.convertToMatrix(this.lights[l].location.y + this.gl.viewportHeight,false),  0.0,
+                0, this.convertToMatrix(this.lights[l].location.y + this.gl.viewportHeight, false),  0.0,
+                this.convertToMatrix(this.lights[l].location.x + this.gl.viewportWidth, false), 0,  0.0,
+                0, 0,  0.0
+            ];
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.DYNAMIC_DRAW);
+            this.lightBuffers[0].itemSize = 3;
+            this.lightBuffers[0].numItems = 4; 
+
+            // Draw lights
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[0]);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.lightBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+
+            this.setMatrixUniforms(this.shaderProgram); 
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[0].numItems);
+    }
 
     },
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize) {
@@ -396,7 +461,7 @@ function LightingEngine(canvas) {
             this.objects.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, false));  
         }
     },
-    this.createTexturedSquare = function(xPos, yPos, faceSize) {
+    this.createTexturedSquare = function(xPos, yPos, faceSize, textureURL) {
         var polygonVertices = [
             {x: 0, y: 0},
             {x: 0, y: faceSize},
@@ -410,19 +475,25 @@ function LightingEngine(canvas) {
             {x: faceSize + xPos, y: faceSize + yPos},
             {x: faceSize + xPos, y: yPos}
         ];
-        console.log(shadowVertices);
-        this.objects.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, true));
+        this.objects.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
     },
     this.initObjectsAndLights = function(){
-        for(var i = 0; i < 30; i++) {
+        var images = [
+        "img/brick.png",
+        "img/brick2.png",
+        "img/mossy-brick.png",
+        "img/ice-brick.png",
+        "img/dark-brick.png"];
+
+        for(var i = 0; i < 50; i++) {
             var w = 50, h = 50;
-            this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);
+           /* this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
+            this.createTexturedSquare(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), 50, images[Math.floor(Math.random() * 5)]);
            /* this.objects.push(new Block(Math.floor(Math.random() * this.gl.viewportWidth - w), Math.floor(Math.random() * this.gl.viewportHeight - h), w, h));*/
         }
         this.lights.push(new Light(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), 
             10,10,10));
 
-        this.createTexturedSquare(500, 300, 80);
     },
     this.createLight = function(x, y) {
 /*        this.lights.push(new Light(x, Math.abs(y - this.gl.viewportHeight), Math.random() * 10, Math.random() * 10,Math.random() * 10));*/

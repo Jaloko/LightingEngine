@@ -1,0 +1,10 @@
+To be completed:
+-Split the objects array into foreground and background
+-Allow objects to be created on the fly (post initialization phase)
+-Add object rotation
+-Optimize lighting
+-Add different types of lights
+	-Point light (currently have this)
+	-Directional light
+	-Ambient light (priority)
+-Split shaders into seperate files rather than embeding them in the HTML
