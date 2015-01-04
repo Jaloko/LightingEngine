@@ -7,12 +7,8 @@ var mousePos = {
 };
 var intensity = 40;
 
-
-function init() {
-
-/*	document.body.style.overflow = false;*/
-	canvas = document.getElementById("canvas");
-	canvas.addEventListener('mousemove', function(evt) {
+function setupEventListeners() {
+    canvas.addEventListener('mousemove', function(evt) {
         mousePos = getMousePos(canvas, evt);
         le.mousePos = mousePos;
     }, false);
@@ -20,17 +16,17 @@ function init() {
     // Checks for mouse click
     canvas.addEventListener("mousedown", function(evt) {
         if(evt.button == 0) {
-        	le.createLight(mousePos.x, mousePos.y);
+            le.createLight(mousePos.x, mousePos.y);
         }
     }, false);
     canvas.addEventListener("mousewheel", function(evt) {
-    	var delta = evt.wheelDelta;
+        var delta = evt.wheelDelta;
 
-    	if(delta > 0) {
-    		le.incrementColourSpectrum(20);
-    	} else {
-    		le.decrementColourSpectrum(20);
-    	}
+        if(delta > 0) {
+            le.incrementColourSpectrum(20);
+        } else {
+            le.decrementColourSpectrum(20);
+        }
     }, false);
     document.body.addEventListener("keydown", function(e) {
         keys[e.keyCode] = true;
@@ -38,10 +34,28 @@ function init() {
      
     document.body.addEventListener("keyup", function(e) {
         keys[e.keyCode] = false;
-    });
+    });    
+}
+
+
+function init() {
+	canvas = document.getElementById("canvas");
+
+    setupEventListeners();
+
 	le = new LightingEngine(canvas);
+    for(var i = 0; i < 50; i++) {
+        le.createPolygon(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), Math.floor(Math.random() * 20) + 3, Math.floor(Math.random() * 50) + 5); 
+    }
+
+    for(var i = 0; i < 50; i++) {
+        /*this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
+        
+    }
+    le.setupColourSpectrum();
+    le.createLight(mousePos.x, mousePos.y);
+
 	le.init();
-	le.setupColourSpectrum();
 	update();
 }
 

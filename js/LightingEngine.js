@@ -1,7 +1,7 @@
 var time =  new Date().getTime();
 var fpsCount = 0;
 var fps = 0;
-var logFPS = true;
+var logFPS = false;
 
 function Light(x, y, red, green, blue) {
     this.location = {
@@ -43,15 +43,6 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.textureURL = textureURL,
     this.textureIndex,
     this.getVertices = function() {
-/*        var theVertices = [
-            this.vertices[0].x + this.x, this.vertices[0].y + this.y, 0.0,
-            this.vertices[1].x + this.x, this.vertices[1].y + this.y, 0.0,
-            this.x, this.y,  0.0,
-            this.vertices[2].x + this.x, this.vertices[2].y + this.y,  0.0
-        ];
-
-        return theVertices;*/
-
         return this.shadowVertices;
     }
 }
@@ -68,7 +59,8 @@ function LightingEngine(canvas) {
     this.shaderProgram,
     this.shaderProgram2,
     this.textureShaderProgram,
-    this.objects = [],
+    this.foreground = [],
+    this.background = [],
     this.lights = [],
     this.lightColour = {
         r: 255, g: 255, b: 255
@@ -91,7 +83,7 @@ function LightingEngine(canvas) {
         this.initGL();
         this.initShaders();
         // Probably Temporary
-        this.initObjectsAndLights();
+/*        this.initforegroundAndLights();*/
         this.initBuffers();
         this.initTextures();
         this.prepareGL();
@@ -119,82 +111,12 @@ function LightingEngine(canvas) {
         this.gl.useProgram(this.shaderProgram);
     },
     this.initBuffers = function() {
-        for(var i = 0; i < this.objects.length; i++) {
-            for(var ii = i; ii >= 0; ii--) {
-                if(this.objects[i] != this.objects[ii] && this.objects[i].vertices.length == this.objects[ii].vertices.length &&
-                    this.objects[i].faceSize == this.objects[ii].faceSize) {
-                    this.objects[i].bufferIndex = this.objects[ii].bufferIndex;
-                } else if(ii == 0) {
-                    this.objects[i].bufferIndex = this.objectBuffers.length;
+        for(var f = 0; f < this.foreground.length; f++) {
+            this.initPolygonBuffers(this.foreground, f);
+        }
 
-                    this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
-                    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[i].bufferIndex]);
-
-                    var vertices = [];
-
-                    if(this.objects[i].textureURL != null) {
-                        vertices = [
-                            this.convertToMatrix(this.objects[i].faceSize, true), this.convertToMatrix(this.objects[i].faceSize, false),  0.0,
-                            0,  this.convertToMatrix(this.objects[i].faceSize, false),  0.0,
-                            this.convertToMatrix(this.objects[i].faceSize, true), 0,  0.0,
-                            0, 0,  0.0,
-                        ];
-                        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
-
-                    } else {
-                        for(var v = 0; v < this.objects[i].vertices.length; v++) {
-                            vertices.push(this.convertToMatrix(this.objects[i].vertices[v].x, true), 
-                            this.convertToMatrix(this.objects[i].vertices[v].y, false),
-                            0.0);
-
-                            if(v % 3 == 1) {
-                                vertices.push(0.0, 0.0, 0.0); 
-                            }
-                        }
-                        var validation = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52];
-                        for(var val = 0; val < validation.length; val++) {
-                            if(this.objects[i].vertices.length == validation[val]) {
-                                vertices.push(0.0, 0.0, 0.0); 
-                                break; 
-                            }
-                        }
-
-                        vertices.push(this.convertToMatrix(this.objects[i].vertices[0].x, true));
-                        vertices.push(this.convertToMatrix(this.objects[i].vertices[0].y, false));
-                        vertices.push(0.0); 
-
-                        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
-                    }
-
-                    this.objectBuffers[this.objects[i].bufferIndex].itemSize = 3;
-                    this.objectBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;  
-
-                    // Color vertices
-                    if(this.objects[i].textureURL == null) {
-                        this.objectColourBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
-                        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[i].bufferIndex]);
-                        colors = [];
-                        for (var c = 0; c < vertices.length; c++) {
-                          colors = colors.concat([0.1, 0.1, 0.1, 1.0]);
-                        }
-                        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
-                        this.objectColourBuffers[this.objects[i].bufferIndex].itemSize = 4;
-                        this.objectColourBuffers[this.objects[i].bufferIndex].numItems = vertices.length / 3;
-                    } else {
-                        this.objectTextureBuffers[this.objects[i].bufferIndex] = this.gl.createBuffer();
-                        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[this.objects[i].bufferIndex]);
-                        var textureCoords = [
-                            1.0, 1.0,
-                            0.0, 1.0,
-                            1.0, 0.0, 
-                            0.0, 0.0,
-                        ];
-                        this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(textureCoords), this.gl.STATIC_DRAW);
-                        this.objectTextureBuffers[this.objects[i].bufferIndex].itemSize = 2;
-                        this.objectTextureBuffers[this.objects[i].bufferIndex].numItems = 4;
-                    }
-                }
-            }
+        for(var b = 0; b < this.background.length; b++) {
+            this.initPolygonBuffers(this.background, b);
         }
 
         this.shadowColourBuffers[0] = this.gl.createBuffer();
@@ -213,38 +135,126 @@ function LightingEngine(canvas) {
 
         this.lightBuffers[0] = this.gl.createBuffer();
     },
-    this.initTextures = function() {
-        var self = this;
-        for(var o = 0; o < this.objects.length; o++) {
-            var createNew = true;
-            for(var t = 0; t < this.textures.length; t++) {
-                // Required for the equals check bellow
-                var temp = this.gl.createTexture();
-                temp.image = new Image();
-                temp.image.src = this.objects[o].textureURL;
-                //
-                if(temp.image.src == this.textures[t].image.src) {
-                    this.objects[o].textureIndex = t;
-                    createNew = false;
-                    break;
-                }
-            }
-            if(createNew == true) {
-                var texture = this.gl.createTexture();
-                this.textures.push(texture);
-                this.textures[this.textures.length -1].image = new Image();
-                this.textures[this.textures.length -1].image.onload = function() {
-                    for(var i = 0; i < self.textures.length; i++) {
-                        if(self.textures[i].hasLoaded == false) {
-                            self.handleLoadedTexture(self.textures[i]);
-                            break; 
-                        } 
+    this.initPolygonBuffers = function(array, i) {
+        for(var ii = i; ii >= 0; ii--) {
+            if(array[i] != array[ii] && array[i].vertices.length == array[ii].vertices.length &&
+                array[i].faceSize == array[ii].faceSize) {
+                array[i].bufferIndex = array[ii].bufferIndex;
+            } else if(ii == 0) {
+                array[i].bufferIndex = this.objectBuffers.length;
+
+                this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[array[i].bufferIndex]);
+
+                var vertices = [];
+
+                if(array[i].textureURL != null) {
+                    vertices = [
+                        this.convertToMatrix(array[i].faceSize, true), this.convertToMatrix(array[i].faceSize, false),  0.0,
+                        0,  this.convertToMatrix(array[i].faceSize, false),  0.0,
+                        this.convertToMatrix(array[i].faceSize, true), 0,  0.0,
+                        0, 0,  0.0,
+                    ];
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
+
+                } else {
+                    for(var v = 0; v < array[i].vertices.length; v++) {
+                        vertices.push(this.convertToMatrix(array[i].vertices[v].x, true), 
+                        this.convertToMatrix(array[i].vertices[v].y, false),
+                        0.0);
+
+                        if(v % 3 == 1) {
+                            vertices.push(0.0, 0.0, 0.0); 
+                        }
                     }
+                    var validation = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52];
+                    for(var val = 0; val < validation.length; val++) {
+                        if(array[i].vertices.length == validation[val]) {
+                            vertices.push(0.0, 0.0, 0.0); 
+                            break; 
+                        }
+                    }
+
+                    vertices.push(this.convertToMatrix(array[i].vertices[0].x, true));
+                    vertices.push(this.convertToMatrix(array[i].vertices[0].y, false));
+                    vertices.push(0.0); 
+
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
                 }
-                this.textures[this.textures.length -1].image.src = this.objects[o].textureURL; 
-                this.textures[this.textures.length -1].hasLoaded = false;
-                this.objects[o].textureIndex = this.textures.length -1;
+
+                this.objectBuffers[array[i].bufferIndex].itemSize = 3;
+                this.objectBuffers[array[i].bufferIndex].numItems = vertices.length / 3;  
+
+                // Color vertices
+                if(array[i].textureURL == null) {
+                    this.objectColourBuffers[array[i].bufferIndex] = this.gl.createBuffer();
+                    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
+                    colors = [];
+                    for (var c = 0; c < vertices.length; c++) {
+                      colors = colors.concat([0.1, 0.1, 0.1, 1.0]);
+                    }
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
+                    this.objectColourBuffers[array[i].bufferIndex].itemSize = 4;
+                    this.objectColourBuffers[array[i].bufferIndex].numItems = vertices.length / 3;
+                } else {
+                    this.objectTextureBuffers[array[i].bufferIndex] = this.gl.createBuffer();
+                    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[array[i].bufferIndex]);
+                    var textureCoords = [
+                        1.0, 1.0,
+                        0.0, 1.0,
+                        1.0, 0.0, 
+                        0.0, 0.0,
+                    ];
+                    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(textureCoords), this.gl.STATIC_DRAW);
+                    this.objectTextureBuffers[array[i].bufferIndex].itemSize = 2;
+                    this.objectTextureBuffers[array[i].bufferIndex].numItems = 4;
+                }
             }
+        }
+    },
+    this.initTextures = function() {
+        for(var f = 0; f < this.foreground.length; f++) {
+            if(this.foreground[f].textureURL != null) {
+                this.assignTextureIndices(this.foreground, f);  
+            }
+        }
+
+        for(var b = 0; b < this.background.length; b++) {
+            if(this.background[b].textureURL != null) {
+                this.assignTextureIndices(this.background, b);
+            }
+        }
+    },
+    this.assignTextureIndices = function(array, i) {
+        var self = this;
+        var createNew = true;
+        for(var t = 0; t < this.textures.length; t++) {
+            // Required for the equals check bellow
+            var temp = this.gl.createTexture();
+            temp.image = new Image();
+            temp.image.src = array[i].textureURL;
+            //
+            if(temp.image.src == this.textures[t].image.src) {
+                array[i].textureIndex = t;
+                createNew = false;
+                break;
+            }
+        }
+        if(createNew == true) {
+            var texture = this.gl.createTexture();
+            this.textures.push(texture);
+            this.textures[this.textures.length -1].image = new Image();
+            this.textures[this.textures.length -1].image.onload = function() {
+                for(var i = 0; i < self.textures.length; i++) {
+                    if(self.textures[i].hasLoaded == false) {
+                        self.handleLoadedTexture(self.textures[i]);
+                        break; 
+                    } 
+                }
+            }
+            this.textures[this.textures.length -1].image.src = array[i].textureURL; 
+            this.textures[this.textures.length -1].hasLoaded = false;
+            array[i].textureIndex = this.textures.length -1;
         }
     },
     this.handleLoadedTexture = function(texture) {
@@ -305,8 +315,14 @@ function LightingEngine(canvas) {
         this.lights[this.lights.length - 1].blue = this.lightColour.b / this.lightIntensity;
     },
     this.render = function() {
-        this.gl.useProgram(this.shaderProgram);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+        for(var b = 0; b < this.background.length; b++) {
+            this.renderObject(this.background, b);
+        }
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+
+        this.gl.useProgram(this.shaderProgram);
         this.gl.enable(this.gl.STENCIL_TEST);
         for(var l = 0; l < this.lights.length; l++) {  
             var theVertices = [];       
@@ -314,8 +330,8 @@ function LightingEngine(canvas) {
             this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
             this.gl.colorMask(false, false, false, false);
             this.gl.depthMask(false);
-            for(var o = 0; o < this.objects.length; o++) {
-                var vertices = this.objects[o].getVertices();
+            for(var f = 0; f < this.foreground.length; f++) {
+                var vertices = this.foreground[f].getVertices();
                 for(var v = 0; v < vertices.length; v++) {
                     var currentVertex = vertices[v];
                     var nextVertex = vertices[(v + 1) % vertices.length]; 
@@ -387,32 +403,8 @@ function LightingEngine(canvas) {
             
         }
 
-
-        for(var o = 0; o < this.objects.length; o++) {
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[this.objects[o].bufferIndex]);
-            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.objectBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
-
-            if(this.objects[o].textureURL == null) {
-                this.gl.useProgram(this.shaderProgram2);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[this.objects[o].bufferIndex]);
-                this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
-                var matrixPos = this.convertVertToMatrix(this.objects[o].x, this.objects[o].y);
-                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
-                this.setMatrixUniforms(this.shaderProgram2);  
-            } else {
-                this.gl.useProgram(this.textureShaderProgram);
-                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[this.objects[o].bufferIndex]);
-                this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[this.objects[o].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
-                this.gl.activeTexture(this.gl.TEXTURE0);
-                this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[this.objects[o].textureIndex]);
-                this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
-                var matrixPos = this.convertVertToMatrix(this.objects[o].x, this.objects[o].y);
-                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
-                this.setMatrixUniforms(this.textureShaderProgram); 
-            }
-
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[this.objects[o].bufferIndex].numItems);
-            mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
+        for(var f = 0; f < this.foreground.length; f++) {
+            this.renderObject(this.foreground, f);
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
@@ -440,14 +432,40 @@ function LightingEngine(canvas) {
 
             this.setMatrixUniforms(this.shaderProgram); 
             this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[0].numItems);
-    }
+        }
 
     },
+    this.renderObject = function(array, i) {
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[array[i].bufferIndex]);
+        this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.objectBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+
+        if(array[i].textureURL == null) {
+            this.gl.useProgram(this.shaderProgram2);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+            var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
+            mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+            this.setMatrixUniforms(this.shaderProgram2);  
+        } else {
+            this.gl.useProgram(this.textureShaderProgram);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[array[i].bufferIndex]);
+            this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.activeTexture(this.gl.TEXTURE0);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[array[i].textureIndex]);
+            this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
+            var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
+            mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+            this.setMatrixUniforms(this.textureShaderProgram); 
+        }
+
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[array[i].bufferIndex].numItems);
+        mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
+    }
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize) {
         if(numberOfVertices < 3) {
-            console.log("To create a polygon it must have at least 3 vertices!");
+            console.log("Error: To create a polygon it must have at least 3 vertices!");
         } else if(numberOfVertices > 52) {
-            console.log("Currently only support polygons with up to 52 vertices.");
+            console.log("Error: Currently only support polygons with up to 52 vertices.");
         } else {
             var polygonVertices = [];
             for(var i = 0; i < numberOfVertices; i++) {
@@ -458,10 +476,13 @@ function LightingEngine(canvas) {
                 shadowVertices.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize) + xPos, y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize) + yPos } );
             }
 
-            this.objects.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, false));  
+            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices));  
         }
     },
-    this.createTexturedSquare = function(xPos, yPos, faceSize, textureURL) {
+    this.createSquare = function(xPos, yPos, faceSize, textureURL, isForeground) {
+        if(isForeground == null) {
+            isForeground = false;
+        }
         var polygonVertices = [
             {x: 0, y: 0},
             {x: 0, y: faceSize},
@@ -475,29 +496,22 @@ function LightingEngine(canvas) {
             {x: faceSize + xPos, y: faceSize + yPos},
             {x: faceSize + xPos, y: yPos}
         ];
-        this.objects.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
-    },
-    this.initObjectsAndLights = function(){
-        var images = [
-        "img/brick.png",
-        "img/brick2.png",
-        "img/mossy-brick.png",
-        "img/ice-brick.png",
-        "img/dark-brick.png"];
-
-        for(var i = 0; i < 50; i++) {
-            var w = 50, h = 50;
-           /* this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
-            this.createTexturedSquare(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), 50, images[Math.floor(Math.random() * 5)]);
-           /* this.objects.push(new Block(Math.floor(Math.random() * this.gl.viewportWidth - w), Math.floor(Math.random() * this.gl.viewportHeight - h), w, h));*/
+        if(isForeground == true) {
+            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
+        } else if(isForeground == false) {
+            this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
         }
-        this.lights.push(new Light(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), 
-            10,10,10));
-
     },
     this.createLight = function(x, y) {
 /*        this.lights.push(new Light(x, Math.abs(y - this.gl.viewportHeight), Math.random() * 10, Math.random() * 10,Math.random() * 10));*/
-        this.lights.push(new Light(x, Math.abs(y - this.gl.viewportHeight), this.lightColour.r / this.lightIntensity, this.lightColour.g / this.lightIntensity, this.lightColour.b / this.lightIntensity));
+        this.lights.push(new Light(x, y, this.lightColour.r / this.lightIntensity, this.lightColour.g / this.lightIntensity, this.lightColour.b / this.lightIntensity));
+    },
+    this.getLight = function(index) {
+        if(index >= this.lights.length) {
+            console.log("Error: Cannot get light with index: " + index + ". The maximum possible index is: " + (this.lights.length - 1));
+        } else {
+            return this.lights[index];
+        }
     },
     this.setLightColour = function(r, g, b) {
         this.lightColour = {
@@ -506,7 +520,7 @@ function LightingEngine(canvas) {
     },
     this.setLightIntensity = function(intensity) {
         if(intensity < 0) {
-            console.log("Cannot set light intensity bellow '0'.");
+            console.log("Error: Cannot set light intensity bellow '0'.");
         } else {
             this.lightIntensity = intensity;  
         }
