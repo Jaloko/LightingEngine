@@ -36,7 +36,7 @@ function setupEventListeners() {
         keys[e.keyCode] = false;
     });    
 }
-
+var width = 1280;
 
 function init() {
 	canvas = document.getElementById("canvas");

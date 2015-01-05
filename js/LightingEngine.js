@@ -2,6 +2,8 @@ var time =  new Date().getTime();
 var fpsCount = 0;
 var fps = 0;
 var logFPS = false;
+var rot = 0;
+var faceSize = 0;
 
 function Light(x, y, red, green, blue) {
     this.location = {
@@ -36,6 +38,7 @@ function Light(x, y, red, green, blue) {
 function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.x = x,
     this.y = y,
+    this.rotation = 0,
     this.faceSize = faceSize,
     this.vertices = vertices,
     this.shadowVertices = shadowVertices,
@@ -49,13 +52,11 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
 
 
 function LightingEngine(canvas) {
-    //Temporary
-    this.textures = [],
-    //
     this.gl,
     this.canvas = canvas,
     this.mvMatrix = mat4.create(),
     this.pMatrix = mat4.create(),
+    this.mvMatrixStack = [],
     this.shaderProgram,
     this.shaderProgram2,
     this.textureShaderProgram,
@@ -75,6 +76,7 @@ function LightingEngine(canvas) {
     this.lightColourBuffers = [],
     this.shadowBuffers = [],
     this.shadowColourBuffers = [],
+    this.textures = [],
     this.mousePos = {
         x: 0,
         y: 0
@@ -93,6 +95,7 @@ function LightingEngine(canvas) {
             this.gl = this.canvas.getContext("webgl", {stencil:true});
             this.gl.viewportWidth = canvas.width;
             this.gl.viewportHeight = canvas.height;
+            this.gl.viewportRatio = canvas.width / canvas.height;
         } catch(e) {
         }
         if (!this.gl) {
@@ -278,9 +281,9 @@ function LightingEngine(canvas) {
        /* this.gl.enable(this.gl.STENCIL_TEST);*/
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
-        mat4.ortho(this.pMatrix, -1.0, 1.0, -1.0, 1.0, 0.1, 100.0);
+        mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
         mat4.identity(this.mvMatrix);
-        mat4.translate(this.mvMatrix, this.mvMatrix, [-1.0 , -1.0 , -1.0]);
+        mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , -1.0]);
         this.gl.enable(this.gl.DEPTH_TEST);
 /*        This.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.CULL_FACE);*/
@@ -306,6 +309,11 @@ function LightingEngine(canvas) {
 
         }
 
+        if(rot < 360) {
+            rot++;
+        } else if(rot >= 360) {
+            rot = 0;
+        }
 
         this.lights[this.lights.length - 1].location.x = this.mousePos.x;
         this.lights[this.lights.length - 1].location.y = Math.abs(this.mousePos.y - this.gl.viewportHeight);   
@@ -445,6 +453,8 @@ function LightingEngine(canvas) {
             this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+            this.mvPushMatrix();
+            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(rot), [0, 0, 1]);
             this.setMatrixUniforms(this.shaderProgram2);  
         } else {
             this.gl.useProgram(this.textureShaderProgram);
@@ -454,12 +464,20 @@ function LightingEngine(canvas) {
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[array[i].textureIndex]);
             this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
             var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
+            var matrixWidth = this.convertToMatrix(array[i].faceSize, true);
+            var matrixHeight = this.convertToMatrix(array[i].faceSize, false);
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+            this.mvPushMatrix();
+            // Move matrix to center of shape
+            mat4.translate(this.mvMatrix, this.mvMatrix, [matrixWidth / 2, matrixHeight / 2, 0.0]);
+            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(rot), [0, 0, 1]);
+            mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixWidth / 2, -matrixHeight / 2, 0.0]);
             this.setMatrixUniforms(this.textureShaderProgram); 
         }
 
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[array[i].bufferIndex].numItems);
-        mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
+        this.mvPopMatrix();
+        mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]); 
     }
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize) {
         if(numberOfVertices < 3) {
@@ -571,13 +589,13 @@ function LightingEngine(canvas) {
     },
     this.convertToMatrix = function(value, isWidth) {
         if(isWidth == true) {
-            return (value / this.gl.viewportWidth * 2);
+            return (value / this.gl.viewportWidth * this.gl.viewportRatio * 2);
         } else {
             return (value / this.gl.viewportHeight * 2);
         }
     },
     this.convertVertToMatrix = function(x, y) {
-        return verts = { x: x / this.gl.viewportWidth * 2, y: y / this.gl.viewportHeight * 2 };
+        return verts = { x: x / this.gl.viewportWidth * this.gl.viewportRatio * 2, y: y / this.gl.viewportHeight * 2 };
     },
     this.getShader = function(gl, id) {
         var shaderScript = document.getElementById(id);
@@ -610,7 +628,7 @@ function LightingEngine(canvas) {
         }
 
         return shader;
-    }
+    },
     this.createShader = function(shaderProgram, isTextureShader, vertexShader, fragmentShader) {
         shaderProgram = this.gl.createProgram();
         this.gl.attachShader(shaderProgram, vertexShader);
@@ -641,5 +659,32 @@ function LightingEngine(canvas) {
         this.gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
         shaderProgram.textureCoordAttribute = this.gl.getAttribLocation(shaderProgram, "aTextureCoord");
         this.gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+    },
+    this.mvPushMatrix = function() {
+        var copy = mat4.create();
+        mat4.copy(copy, this.mvMatrix);
+        this.mvMatrixStack.push(copy);  
+    },
+    this.mvPopMatrix = function() {
+        if (this.mvMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+        this.mvMatrix = this.mvMatrixStack.pop();
+    },
+    this.resize = function(width, height) {
+        canvas.width = width;
+        canvas.height = height;
+        mat4.translate(this.mvMatrix, this.mvMatrix, [+this.gl.viewportRatio , +1.0 , 0.0]);
+        this.gl.viewportWidth = width;
+        this.gl.viewportHeight = height;
+        this.gl.viewportRatio = width / height;
+        this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
+        mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
+        mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);
     }
+}
+
+
+function degToRad(degrees) {
+    return degrees * Math.PI / 180;
 }

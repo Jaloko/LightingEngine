@@ -7,7 +7,7 @@ To be completed:
 	-Directional light
 	-Ambient light (priority)
 -Split shaders into seperate files rather than embeding them in the HTML
--Dynamic window/canvas resizing
 
 Completed:
 -Split the objects array into foreground and background
+-Dynamic window/canvas resizing
