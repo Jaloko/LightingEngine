@@ -47,6 +47,20 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.textureIndex,
     this.getVertices = function() {
         return this.shadowVertices;
+    },
+    this.rotate = function() {
+        var angle = degToRad(this.rotation);
+        for(var i = 0; i < shadowVertices.length; i++) {
+            var px = this.x + this.vertices[i].x;
+            var py = this.y + this.vertices[i].y;
+            var ox = (this.x);
+            var oy = (this.y);
+            var x = Math.cos(angle) * (px-ox) - Math.sin(angle) * (py - oy) + ox;
+            var y = Math.sin(angle) * (px-ox) + Math.cos(angle) * (py - oy) + oy;
+            this.shadowVertices[i].x = x;
+            this.shadowVertices[i].y = y;
+/*            console.log("Vert: " + i + ": " + px + ", " + py + "   " + x + ", " + y);*/
+        }
     }
 }
 
@@ -306,7 +320,6 @@ function LightingEngine(canvas) {
                 console.log("# of Lights: " + this.lights.length);
                 console.log("----------------");   
             }
-
         }
 
         if(rot < 360) {
@@ -314,6 +327,7 @@ function LightingEngine(canvas) {
         } else if(rot >= 360) {
             rot = 0;
         }
+
 
         this.lights[this.lights.length - 1].location.x = this.mousePos.x;
         this.lights[this.lights.length - 1].location.y = Math.abs(this.mousePos.y - this.gl.viewportHeight);   
@@ -339,6 +353,8 @@ function LightingEngine(canvas) {
             this.gl.colorMask(false, false, false, false);
             this.gl.depthMask(false);
             for(var f = 0; f < this.foreground.length; f++) {
+                this.foreground[f].rotation = rot;
+                this.foreground[f].rotate();
                 var vertices = this.foreground[f].getVertices();
                 for(var v = 0; v < vertices.length; v++) {
                     var currentVertex = vertices[v];

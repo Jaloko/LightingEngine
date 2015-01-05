@@ -44,6 +44,7 @@ function init() {
     setupEventListeners();
 
 	le = new LightingEngine(canvas);
+    le.createPolygon(50, 50, 4, 30);
     for(var i = 0; i < 50; i++) {
         le.createPolygon(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), Math.floor(Math.random() * 20) + 3, Math.floor(Math.random() * 50) + 5); 
     }
