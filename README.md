@@ -1,8 +1,8 @@
 LightingEngine
 ==============
 
-A 2D lighting and shadows engine using WebGL
+A 2D lighting and shadows engine using WebGL and Javascript.
 
 A live example can be found here: https://corybeams.com/lightingengine/
 
-![alt tag](http://puu.sh/dNpbp/f79be1f7a2.jpg)
+![alt tag](http://puu.sh/e8waf/5bace22882.jpg)
