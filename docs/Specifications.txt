@@ -4,10 +4,11 @@ To be completed:
 -Add different types of lights
 	-Point light (currently have this)
 	-Directional light
-	-Ambient light (priority)
 -Split shaders into seperate files rather than embeding them in the HTML
 
 Completed:
 -Split the objects array into foreground and background
 -Dynamic window/canvas resizing
 -Add object rotation
+-Add different types of lights
+	-Ambient light

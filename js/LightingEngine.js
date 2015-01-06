@@ -17,24 +17,6 @@ function Light(x, y, red, green, blue) {
     this.blue = blue
 }
 
-/*function Block(x, y, width, height) {
-    this.x = x,
-    this.y = y,
-    this.width = width,
-    this.height = height,
-
-    this.getVertices = function() {
-        var vertices = [
-            {x: this.x, y: this.y},
-            {x: this.x, y: this.y + this.height},
-            {x: this.x + this.width, y:this.y + this.height},
-            {x: this.x + this.width, y: this.y}
-        ];
-
-        return vertices;
-    }
-}*/
-
 function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.x = x,
     this.y = y,
@@ -46,20 +28,27 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.textureURL = textureURL,
     this.textureIndex,
     this.getVertices = function() {
-        return this.shadowVertices;
+        return this.shadowVertices; 
     },
-    this.rotate = function() {
-        var angle = degToRad(this.rotation);
-        for(var i = 0; i < shadowVertices.length; i++) {
-            var px = this.x + this.vertices[i].x;
-            var py = this.y + this.vertices[i].y;
-            var ox = (this.x);
-            var oy = (this.y);
-            var x = Math.cos(angle) * (px-ox) - Math.sin(angle) * (py - oy) + ox;
-            var y = Math.sin(angle) * (px-ox) + Math.cos(angle) * (py - oy) + oy;
-            this.shadowVertices[i].x = x;
-            this.shadowVertices[i].y = y;
-/*            console.log("Vert: " + i + ": " + px + ", " + py + "   " + x + ", " + y);*/
+    this.setRotation = function(angle) {
+        if(this.rotation != angle) {
+            this.rotation = angle;
+            var a = degToRad(this.rotation);
+            for(var i = 0; i < shadowVertices.length; i++) {
+                var px = this.x + this.vertices[i].x;
+                var py = this.y + this.vertices[i].y;
+                if(this.textureURL == null) {
+                    var ox = (this.x);
+                    var oy = (this.y); 
+                } else {
+                    var ox = (this.x + this.faceSize / 2);
+                    var oy = (this.y + this.faceSize / 2); 
+                }
+                var x = Math.cos(a) * (px-ox) - Math.sin(a) * (py - oy) + ox;
+                var y = Math.sin(a) * (px-ox) + Math.cos(a) * (py - oy) + oy;
+                this.shadowVertices[i].x = x;
+                this.shadowVertices[i].y = y;
+            } 
         }
     }
 }
@@ -76,6 +65,9 @@ function LightingEngine(canvas) {
     this.textureShaderProgram,
     this.foreground = [],
     this.background = [],
+    this.ambientLight = {
+        r: 255, g: 255, b: 255, a: 255
+    },
     this.lights = [],
     this.lightColour = {
         r: 255, g: 255, b: 255
@@ -276,18 +268,11 @@ function LightingEngine(canvas) {
     },
     this.handleLoadedTexture = function(texture) {
         this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
-
         this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-
-
         this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, texture.image);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
         this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
-
-
         this.gl.generateMipmap(this.gl.TEXTURE_2D);
-
-
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
         texture.hasLoaded = true;
     },
@@ -353,8 +338,8 @@ function LightingEngine(canvas) {
             this.gl.colorMask(false, false, false, false);
             this.gl.depthMask(false);
             for(var f = 0; f < this.foreground.length; f++) {
-                this.foreground[f].rotation = rot;
-                this.foreground[f].rotate();
+                this.foreground[f].setRotation(rot); 
+
                 var vertices = this.foreground[f].getVertices();
                 for(var v = 0; v < vertices.length; v++) {
                     var currentVertex = vertices[v];
@@ -465,15 +450,17 @@ function LightingEngine(canvas) {
 
         if(array[i].textureURL == null) {
             this.gl.useProgram(this.shaderProgram2);
+            this.gl.uniform4f(this.gl.getUniformLocation(this.shaderProgram2, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g / 255, this.ambientLight.b / 255, this.ambientLight.a / 255);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
             this.mvPushMatrix();
-            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(rot), [0, 0, 1]);
+            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(array[i].rotation), [0, 0, 1]);
             this.setMatrixUniforms(this.shaderProgram2);  
         } else {
             this.gl.useProgram(this.textureShaderProgram);
+            this.gl.uniform4f(this.gl.getUniformLocation(this.textureShaderProgram, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g  / 255, this.ambientLight.b  / 255, this.ambientLight.a  / 255);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[array[i].bufferIndex]);
             this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             this.gl.activeTexture(this.gl.TEXTURE0);
@@ -486,7 +473,7 @@ function LightingEngine(canvas) {
             this.mvPushMatrix();
             // Move matrix to center of shape
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixWidth / 2, matrixHeight / 2, 0.0]);
-            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(rot), [0, 0, 1]);
+            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(array[i].rotation), [0, 0, 1]);
             mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixWidth / 2, -matrixHeight / 2, 0.0]);
             this.setMatrixUniforms(this.textureShaderProgram); 
         }
@@ -494,7 +481,7 @@ function LightingEngine(canvas) {
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[array[i].bufferIndex].numItems);
         this.mvPopMatrix();
         mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]); 
-    }
+    },
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize) {
         if(numberOfVertices < 3) {
             console.log("Error: To create a polygon it must have at least 3 vertices!");
@@ -534,6 +521,11 @@ function LightingEngine(canvas) {
             this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
         } else if(isForeground == false) {
             this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
+        }
+    },
+    this.setAmbientLight = function(r, g, b, a) {
+        this.ambientLight = {
+            r: r, g: g, b: b, a: a
         }
     },
     this.createLight = function(x, y) {
@@ -699,7 +691,6 @@ function LightingEngine(canvas) {
         mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);
     }
 }
-
 
 function degToRad(degrees) {
     return degrees * Math.PI / 180;
