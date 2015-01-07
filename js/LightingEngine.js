@@ -86,6 +86,7 @@ function LightingEngine(canvas) {
         x: 0,
         y: 0
     },
+    this.initialized = false,
     this.init = function() {
         this.initGL();
         this.initShaders();
@@ -94,6 +95,7 @@ function LightingEngine(canvas) {
         this.initBuffers();
         this.initTextures();
         this.prepareGL();
+        this.initialized = true;
     },
     this.initGL = function() {
         try {
@@ -488,7 +490,10 @@ function LightingEngine(canvas) {
                 shadowVertices.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize) + xPos, y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize) + yPos } );
             }
 
-            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices));  
+            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices)); 
+            if(this.initialized == true) {
+                this.initPolygonBuffers(this.foreground, this.foreground.length - 1); 
+            } 
         }
     },
     this.createSquare = function(xPos, yPos, faceSize, textureURL, isForeground) {
@@ -512,6 +517,16 @@ function LightingEngine(canvas) {
             this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
         } else if(isForeground == false) {
             this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
+        }
+
+        if(this.initialized == true) {
+            if(isForeground == true) {
+                this.initPolygonBuffers(this.foreground, this.foreground.length - 1); 
+                this.assignTextureIndices(this.foreground, this.foreground.length - 1);
+            } else {
+                this.initPolygonBuffers(this.background, this.background.length - 1); 
+                this.assignTextureIndices(this.foreground, this.foreground.length - 1); 
+            }
         }
     },
     this.getForeground = function(index) {
