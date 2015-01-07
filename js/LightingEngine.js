@@ -2,7 +2,6 @@ var time =  new Date().getTime();
 var fpsCount = 0;
 var fps = 0;
 var logFPS = false;
-var rot = 0;
 var faceSize = 0;
 
 function Light(x, y, red, green, blue) {
@@ -109,11 +108,11 @@ function LightingEngine(canvas) {
         }
     },
     this.initShaders = function() {
-        var fragmentShader = this.getShader(this.gl, "shader-fs");
-        var vertexShader = this.getShader(this.gl, "shader-vs");
-        var colourFragmentShader = this.getShader(this.gl, "shader-colour-fs");
-        var textureVertexShader = this.getShader(this.gl, "shader-texture-vs");
-        var textureFragmentShader = this.getShader(this.gl, "shader-texture-fs");
+        var fragmentShader = this.getShaderFromVar(this.gl, mainFragShader, "Frag");
+        var vertexShader = this.getShaderFromVar(this.gl, mainVertShader, "Vert");
+        var colourFragmentShader = this.getShaderFromVar(this.gl, colourFragShader, "Frag");
+        var textureVertexShader = this.getShaderFromVar(this.gl, textureFragShader, "Frag");
+        var textureFragmentShader = this.getShaderFromVar(this.gl, textureVertShader, "Vert");
         this.shaderProgram = this.createShader(this.shaderProgram, false, vertexShader, fragmentShader);
         this.shaderProgram2 = this.createShader(this.shaderProgram2, false, vertexShader, colourFragmentShader);
         this.textureShaderProgram = this.createShader(this.textureShaderProgram, true, textureVertexShader, textureFragmentShader);
@@ -307,13 +306,6 @@ function LightingEngine(canvas) {
             }
         }
 
-        if(rot < 360) {
-            rot++;
-        } else if(rot >= 360) {
-            rot = 0;
-        }
-
-
         this.lights[this.lights.length - 1].location.x = this.mousePos.x;
         this.lights[this.lights.length - 1].location.y = Math.abs(this.mousePos.y - this.gl.viewportHeight);   
             
@@ -338,7 +330,6 @@ function LightingEngine(canvas) {
             this.gl.colorMask(false, false, false, false);
             this.gl.depthMask(false);
             for(var f = 0; f < this.foreground.length; f++) {
-                this.foreground[f].setRotation(rot); 
 
                 var vertices = this.foreground[f].getVertices();
                 for(var v = 0; v < vertices.length; v++) {
@@ -523,6 +514,20 @@ function LightingEngine(canvas) {
             this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
         }
     },
+    this.getForeground = function(index) {
+        if(index >= this.foreground.length) {
+            console.log("Error: Cannot get foreground object with index: " + index + ". The maximum possible index is: " + (this.foreground.length - 1));
+        } else {
+            return this.foreground[index];
+        }
+    },
+    this.getBackground = function(index) {
+        if(index >= this.background.length) {
+            console.log("Error: Cannot get background object with index: " + index + ". The maximum possible index is: " + (this.background.length - 1));
+        } else {
+            return this.background[index];
+        }
+    },
     this.setAmbientLight = function(r, g, b, a) {
         this.ambientLight = {
             r: r, g: g, b: b, a: a
@@ -605,7 +610,7 @@ function LightingEngine(canvas) {
     this.convertVertToMatrix = function(x, y) {
         return verts = { x: x / this.gl.viewportWidth * this.gl.viewportRatio * 2, y: y / this.gl.viewportHeight * 2 };
     },
-    this.getShader = function(gl, id) {
+    this.getShaderFromHTML = function(gl, id) {
         var shaderScript = document.getElementById(id);
         if (!shaderScript) {
             return null;
@@ -637,6 +642,25 @@ function LightingEngine(canvas) {
 
         return shader;
     },
+    this.getShaderFromVar = function(gl, shaderSrc, type) {
+        var shader;
+        if(type == "Vert" || type == "Vertex" || type == "VertexShader") {
+            shader = this.gl.createShader(gl.VERTEX_SHADER);  
+        } else if(type == "Frag" || type == "Fragment" || type == "FragmentShader") {
+            shader = this.gl.createShader(gl.FRAGMENT_SHADER); 
+        } else {
+            console.log("Error: Cannot get shader. Invalid type provided.");
+            return;
+        }
+        this.gl.shaderSource(shader, shaderSrc);
+        this.gl.compileShader(shader);
+
+        if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
+            alert(this.gl.getShaderInfoLog(shader));
+            return null;
+        }
+        return shader;
+    }
     this.createShader = function(shaderProgram, isTextureShader, vertexShader, fragmentShader) {
         shaderProgram = this.gl.createProgram();
         this.gl.attachShader(shaderProgram, vertexShader);

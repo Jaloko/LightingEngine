@@ -14,6 +14,8 @@ var images = [
 "img/ice-brick.png",
 "img/dark-brick.png"];
 
+var rot = 0;
+
 function setupEventListeners() {
     canvas.addEventListener('mousemove', function(evt) {
         mousePos = getMousePos(canvas, evt);
@@ -66,6 +68,7 @@ function init() {
         
     }
     le.setupColourSpectrum();
+    le.setAmbientLight(25, 25, 25, 255);
     le.createLight(mousePos.x, mousePos.y);
 
 	le.init();
@@ -80,6 +83,18 @@ function update() {
         intensity-=1;
         le.setLightIntensity(intensity);
     }
+
+    if(rot < 360) {
+        rot++;
+    } else if(rot >= 360) {
+        rot = 0;
+    }
+
+    for(var i = 0; i < le.foreground.length; i++) {
+        var o = le.getForeground(i);
+        o.setRotation(rot);
+    }
+
 	le.update();
 	render();
 	requestAnimationFrame(update);
