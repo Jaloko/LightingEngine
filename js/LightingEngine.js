@@ -4,7 +4,7 @@ var fps = 0;
 var logFPS = true;
 var faceSize = 0;
 
-function Light(x, y, rotation, type, red, green, blue) {
+function Light(x, y, rotation, type, red, green, blue, intensity) {
     this.location = {
         x : x,
         y : y
@@ -14,7 +14,11 @@ function Light(x, y, rotation, type, red, green, blue) {
     this.bufferIndex,
     this.red = red,
     this.green = green,
-    this.blue = blue
+    this.blue = blue,
+    this.intensity = intensity,
+    this.setRotation = function(angle) {
+        this.rotation = angle;
+    }
 }
 
 function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
@@ -79,7 +83,6 @@ function LightingEngine(canvas) {
     this.objectColourBuffers = [],
     this.objectTextureBuffers = [],
     this.lightBuffers = [],
-    this.lightColourBuffers = [],
     this.shadowBuffers = [],
     this.shadowColourBuffers = [],
     this.textures = [],
@@ -316,7 +319,6 @@ function LightingEngine(canvas) {
         }
     },
     this.prepareGL = function() {
-       /* this.gl.enable(this.gl.STENCIL_TEST);*/
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
         this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
         mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
@@ -326,7 +328,6 @@ function LightingEngine(canvas) {
 /*        This.gl.frontFace(this.gl.CW);
         this.gl.enable(this.gl.CULL_FACE);*/
         this.gl.enable(this.gl.STENCIL_TEST);
-
     },
     this.setMatrixUniforms = function(shaderProgram) {
         this.gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, this.pMatrix);
@@ -349,9 +350,10 @@ function LightingEngine(canvas) {
         this.lights[this.lights.length - 1].location.x = this.mousePos.x;
         this.lights[this.lights.length - 1].location.y = Math.abs(this.mousePos.y - this.gl.viewportHeight);   
             
-        this.lights[this.lights.length - 1].red = this.lightColour.r / this.lightIntensity;
-        this.lights[this.lights.length - 1].green = this.lightColour.g / this.lightIntensity;
-        this.lights[this.lights.length - 1].blue = this.lightColour.b / this.lightIntensity;
+        this.lights[this.lights.length - 1].red = this.lightColour.r;
+        this.lights[this.lights.length - 1].green = this.lightColour.g;
+        this.lights[this.lights.length - 1].blue = this.lightColour.b;
+        this.lights[this.lights.length - 1].intensity = this.lightIntensity;
     },
     this.render = function() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -415,7 +417,7 @@ function LightingEngine(canvas) {
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
             this.gl.stencilFunc(this.gl.EQUAL, 0, 1);
             this.gl.uniform2f(this.gl.getUniformLocation(this.shaderProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red, this.lights[l].green, this.lights[l].blue);
+            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
 
@@ -439,11 +441,10 @@ function LightingEngine(canvas) {
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
-
         this.gl.useProgram(this.shaderProgram);
         for(var l = 0; l < this.lights.length; l++) { 
             this.gl.uniform2f(this.gl.getUniformLocation(this.shaderProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red, this.lights[l].green, this.lights[l].blue);
+            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
@@ -573,13 +574,13 @@ function LightingEngine(canvas) {
     },
     this.createSpotLight = function(x, y) {
 /*        this.lights.push(new Light(x, Math.abs(y - this.gl.viewportHeight), Math.random() * 10, Math.random() * 10,Math.random() * 10));*/
-        this.lights.push(new Light(x, y, 0, "spot", this.lightColour.r / this.lightIntensity, this.lightColour.g / this.lightIntensity, this.lightColour.b / this.lightIntensity));
+        this.lights.push(new Light(x, y, 0, "spot", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
         if(this.initialized == true) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }
     },
     this.createDirectionalLight = function(x, y, angle) {
-        this.lights.push(new Light(x, y, angle, "directional", this.lightColour.r / this.lightIntensity, this.lightColour.g / this.lightIntensity, this.lightColour.b / this.lightIntensity));
+        this.lights.push(new Light(x, y, angle, "directional", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
         if(this.initialized == true) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }
