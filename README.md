@@ -11,7 +11,7 @@ A live example can be found here: https://corybeams.com/lightingengine/
 
 ```javascript
 var le = new LightingEngine(canvas);
-le.createPolygon(100, 100, 5, 50);
+le.createPolygon(100, 100, 5, 50, true);
 le.setLightColour(255, 0, 0);
 le.createSpotLight(200, 200);
 le.init();
