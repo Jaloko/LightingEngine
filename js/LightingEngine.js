@@ -313,7 +313,6 @@ function LightingEngine(canvas) {
                     this.lightBuffers[array[i].bufferIndex].itemSize = 3;
                     this.lightBuffers[array[i].bufferIndex].numItems = 3;  
                 }
-
             }
         }
     },
@@ -490,7 +489,7 @@ function LightingEngine(canvas) {
         this.mvPopMatrix();
         mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]); 
     },
-    this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize) {
+    this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize, isForeground) {
         if(numberOfVertices < 3) {
             console.log("Error: To create a polygon it must have at least 3 vertices!");
         } else if(numberOfVertices > 52) {
@@ -504,10 +503,18 @@ function LightingEngine(canvas) {
             for(var i = 0; i < numberOfVertices; i++) {
                 shadowVertices.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize) + xPos, y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize) + yPos } );
             }
+            if(isForeground == true) {
+                this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices)); 
+            } else if(isForeground == false) {
+                this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices));
+            }
 
-            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices)); 
             if(this.initialized == true) {
-                this.initPolygonBuffers(this.foreground, this.foreground.length - 1); 
+                if(isForeground == true) {
+                    this.initPolygonBuffers(this.foreground, this.foreground.length - 1); 
+                } else if(isForeground == false) {
+                    this.initPolygonBuffers(this.background, this.background.length - 1); 
+                }
             } 
         }
     },
@@ -540,7 +547,7 @@ function LightingEngine(canvas) {
                 this.assignTextureIndices(this.foreground, this.foreground.length - 1);
             } else {
                 this.initPolygonBuffer(this.background, this.background.length - 1); 
-                this.assignTextureIndices(this.foreground, this.foreground.length - 1); 
+                this.assignTextureIndices(this.background, this.background.length - 1); 
             }
         }
     },
