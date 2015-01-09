@@ -2,7 +2,6 @@ var time =  new Date().getTime();
 var fpsCount = 0;
 var fps = 0;
 var logFPS = true;
-var faceSize = 0;
 
 function Light(x, y, rotation, type, red, green, blue, intensity) {
     this.location = {
@@ -16,6 +15,10 @@ function Light(x, y, rotation, type, red, green, blue, intensity) {
     this.green = green,
     this.blue = blue,
     this.intensity = intensity,
+    this.setPosition = function(x, y) {
+        this.location.x = x;
+        this.location.y = y;
+    },
     this.setRotation = function(angle) {
         this.rotation = angle;
     }
@@ -86,10 +89,6 @@ function LightingEngine(canvas) {
     this.shadowBuffers = [],
     this.shadowColourBuffers = [],
     this.textures = [],
-    this.mousePos = {
-        x: 0,
-        y: 0
-    },
     this.initialized = false,
     this.init = function() {
         this.initGL();
@@ -346,14 +345,6 @@ function LightingEngine(canvas) {
                 console.log("----------------");   
             }
         }
-
-        this.lights[this.lights.length - 1].location.x = this.mousePos.x;
-        this.lights[this.lights.length - 1].location.y = Math.abs(this.mousePos.y - this.gl.viewportHeight);   
-            
-        this.lights[this.lights.length - 1].red = this.lightColour.r;
-        this.lights[this.lights.length - 1].green = this.lightColour.g;
-        this.lights[this.lights.length - 1].blue = this.lightColour.b;
-        this.lights[this.lights.length - 1].intensity = this.lightIntensity;
     },
     this.render = function() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);

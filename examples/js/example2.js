@@ -19,7 +19,6 @@ var rot = 0;
 function setupEventListeners() {
     canvas.addEventListener('mousemove', function(evt) {
         mousePos = getMousePos(canvas, evt);
-        le.mousePos = mousePos;
     }, false);
 
     // Checks for mouse click
@@ -94,6 +93,14 @@ function update() {
         var o = le.getForeground(i);
         o.setRotation(rot);
     }
+
+    le.getLight(le.lights.length - 1).location.x = mousePos.x;
+    le.getLight(le.lights.length - 1).location.y = Math.abs(mousePos.y - canvas.height);   
+            
+    le.getLight(le.lights.length - 1).red = le.lightColour.r;
+    le.getLight(le.lights.length - 1).green = le.lightColour.g;
+    le.getLight(le.lights.length - 1).blue = le.lightColour.b;
+    le.getLight(le.lights.length - 1).intensity = le.lightIntensity;
 
 	le.update();
 	render();
