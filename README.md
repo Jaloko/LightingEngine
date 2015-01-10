@@ -13,11 +13,11 @@ A live example can be found here: https://corybeams.com/lightingengine/
 var le = new LightingEngine(canvas);
 le.createPolygon(100, 100, 5, 50, true);
 le.setLightColour(255, 0, 0);
-le.createSpotLight(200, 200);
+le.createPointLight(200, 200);
 le.init();
 
 le.update();
 le.render();
 ```
 
-This will start the engine with the provided canvas, create a pentagon at x = 100 and y = 100, set the light colour to red, create a spot light at x = 200 and y = 200 and finally initialize the engine. After this the engine is updated and then renders to the canvas.
+This will start the engine with the provided canvas, create a pentagon at x = 100 and y = 100, set the light colour to red, create a point light at x = 200 and y = 200 and finally initialize the engine. After this the engine is updated and then renders to the canvas.
