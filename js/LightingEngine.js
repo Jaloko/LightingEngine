@@ -67,8 +67,10 @@ function LightingEngine(canvas) {
     this.mvMatrix = mat4.create(),
     this.pMatrix = mat4.create(),
     this.mvMatrixStack = [],
+    this.currentProgram,
     this.shaderProgram,
     this.shaderProgram2,
+    this.spotLightShaderProgram,
     this.textureShaderProgram,
     this.foreground = [],
     this.background = [],
@@ -111,15 +113,17 @@ function LightingEngine(canvas) {
         }
     },
     this.initShaders = function() {
-        var fragmentShader = this.getShaderFromVar(this.gl, mainFragShader, "Frag");
+        var pointLightfragmentShader = this.getShaderFromVar(this.gl, pointLightFragShader, "Frag");
         var vertexShader = this.getShaderFromVar(this.gl, mainVertShader, "Vert");
+        var spotLightfragmentShader = this.getShaderFromVar(this.gl, spotLightFragShader, "Frag");
         var colourFragmentShader = this.getShaderFromVar(this.gl, colourFragShader, "Frag");
         var textureVertexShader = this.getShaderFromVar(this.gl, textureFragShader, "Frag");
         var textureFragmentShader = this.getShaderFromVar(this.gl, textureVertShader, "Vert");
-        this.shaderProgram = this.createShader(this.shaderProgram, false, vertexShader, fragmentShader);
+        this.shaderProgram = this.createShader(this.shaderProgram, false, vertexShader, pointLightfragmentShader);
         this.shaderProgram2 = this.createShader(this.shaderProgram2, false, vertexShader, colourFragmentShader);
+        this.spotLightShaderProgram = this.createShader(this.spotLightShaderProgram, false, vertexShader, spotLightfragmentShader);
         this.textureShaderProgram = this.createShader(this.textureShaderProgram, true, textureVertexShader, textureFragmentShader);
-        this.gl.useProgram(this.shaderProgram);
+        this.setCurrentShaderProgram(this.shaderProgram);
     },
     this.initBuffers = function() {
         for(var f = 0; f < this.foreground.length; f++) {
@@ -289,7 +293,7 @@ function LightingEngine(canvas) {
                 this.lightBuffers[this.lightBuffers.length] = this.gl.createBuffer();
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[array[i].bufferIndex]);
 
-                if(array[i].type == "spot") {
+                if(array[i].type == "point" || array[i].type == "spot") {
                     vertices = [
                         this.convertToMatrix(this.gl.viewportWidth, true), this.convertToMatrix(this.gl.viewportHeight,false),  0.0,
                         this.convertToMatrix(-this.gl.viewportWidth, true), this.convertToMatrix(this.gl.viewportHeight, false),  0.0,
@@ -353,7 +357,7 @@ function LightingEngine(canvas) {
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
-        this.gl.useProgram(this.shaderProgram);
+        this.setCurrentShaderProgram(this.shaderProgram);
         this.gl.enable(this.gl.STENCIL_TEST);
         for(var l = 0; l < this.lights.length; l++) {  
             var theVertices = [];       
@@ -397,27 +401,31 @@ function LightingEngine(canvas) {
             this.shadowBuffers[0].numItems = theVertices.length / 3;
 
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
-            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowColourBuffers[0]);
-            this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
-            this.setMatrixUniforms(this.shaderProgram); 
+            this.gl.vertexAttribPointer(this.currentProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.setMatrixUniforms(this.currentProgram); 
             this.gl.drawArrays(this.gl.TRIANGLES, 0, this.shadowBuffers[0].numItems);
 
             this.gl.colorMask(true, true, true, true);
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
             this.gl.stencilFunc(this.gl.EQUAL, 0, 1);
-            this.gl.uniform2f(this.gl.getUniformLocation(this.shaderProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+            if(this.lights[l].type == "point") {
+                this.setCurrentShaderProgram(this.shaderProgram);
+            } else if(this.lights[l].type == "spot") {
+                this.setCurrentShaderProgram(this.spotLightShaderProgram);
+            } 
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
-
+            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+            this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
-            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
             this.mvPushMatrix();
             mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]); 
-            this.setMatrixUniforms(this.shaderProgram); 
+            this.setMatrixUniforms(this.currentProgram);
             this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
             this.mvPopMatrix();
             mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
@@ -431,19 +439,23 @@ function LightingEngine(canvas) {
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
-        this.gl.useProgram(this.shaderProgram);
-        for(var l = 0; l < this.lights.length; l++) { 
-            this.gl.uniform2f(this.gl.getUniformLocation(this.shaderProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.shaderProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+        for(var l = 0; l < this.lights.length; l++) {
+            if(this.lights[l].type == "point") {
+                this.setCurrentShaderProgram(this.shaderProgram);
+            } else if(this.lights[l].type == "spot") {
+                this.setCurrentShaderProgram(this.spotLightShaderProgram);
+            } 
+            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+            this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
-            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
             mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
             this.mvPushMatrix();
             mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]);
-            this.setMatrixUniforms(this.shaderProgram);
+            this.setMatrixUniforms(this.currentProgram);
             this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
             this.mvPopMatrix(); 
             mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
@@ -453,11 +465,11 @@ function LightingEngine(canvas) {
     },
     this.renderObject = function(array, i) {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[array[i].bufferIndex]);
-        this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, this.objectBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+        this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.objectBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
 
         if(array[i].textureURL == null) {
-            this.gl.useProgram(this.shaderProgram2);
-            this.gl.uniform4f(this.gl.getUniformLocation(this.shaderProgram2, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g / 255, this.ambientLight.b / 255, this.ambientLight.a / 255);
+            this.setCurrentShaderProgram(this.shaderProgram2);
+            this.gl.uniform4f(this.gl.getUniformLocation(this.currentProgram, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g / 255, this.ambientLight.b / 255, this.ambientLight.a / 255);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
@@ -466,10 +478,10 @@ function LightingEngine(canvas) {
             mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(array[i].rotation), [0, 0, 1]);
             this.setMatrixUniforms(this.shaderProgram2);  
         } else {
-            this.gl.useProgram(this.textureShaderProgram);
-            this.gl.uniform4f(this.gl.getUniformLocation(this.textureShaderProgram, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g  / 255, this.ambientLight.b  / 255, this.ambientLight.a  / 255);
+            this.setCurrentShaderProgram(this.textureShaderProgram);
+            this.gl.uniform4f(this.gl.getUniformLocation(this.currentProgram, "ambientLight"), this.ambientLight.r / 255, this.ambientLight.g  / 255, this.ambientLight.b  / 255, this.ambientLight.a  / 255);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[array[i].bufferIndex]);
-            this.gl.vertexAttribPointer(this.textureShaderProgram.textureCoordAttribute, this.objectTextureBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+            this.gl.vertexAttribPointer(this.currentProgram.textureCoordAttribute, this.objectTextureBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             this.gl.activeTexture(this.gl.TEXTURE0);
             this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[array[i].textureIndex]);
             this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
@@ -489,6 +501,10 @@ function LightingEngine(canvas) {
         this.mvPopMatrix();
         mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]); 
     },
+    this.setCurrentShaderProgram = function(shaderProgram) {
+        this.gl.useProgram(shaderProgram);
+        this.currentProgram = shaderProgram;
+    }
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize, isForeground) {
         if(numberOfVertices < 3) {
             console.log("Error: To create a polygon it must have at least 3 vertices!");
@@ -570,8 +586,14 @@ function LightingEngine(canvas) {
             r: r, g: g, b: b, a: a
         }
     },
-    this.createSpotLight = function(x, y) {
+    this.createPointLight = function(x, y) {
 /*        this.lights.push(new Light(x, Math.abs(y - this.gl.viewportHeight), Math.random() * 10, Math.random() * 10,Math.random() * 10));*/
+        this.lights.push(new Light(x, y, 0, "point", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
+        if(this.initialized == true) {
+            this.initLightBuffer(this.lights, this.lights.length - 1);
+        }
+    },
+    this.createSpotLight = function(x, y) {
         this.lights.push(new Light(x, y, 0, "spot", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
         if(this.initialized == true) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
@@ -706,7 +728,7 @@ function LightingEngine(canvas) {
             return null;
         }
         return shader;
-    }
+    },
     this.createShader = function(shaderProgram, isTextureShader, vertexShader, fragmentShader) {
         shaderProgram = this.gl.createProgram();
         this.gl.attachShader(shaderProgram, vertexShader);

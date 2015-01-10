@@ -1,4 +1,4 @@
-var mainFragShader = 
+var pointLightFragShader = 
 	"precision mediump float;" +
 	"uniform vec2 lightLocation;" +
 	"uniform vec3 lightColor;" +
@@ -19,6 +19,17 @@ var mainVertShader =
 	"void main(void) {" +
 		"gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);" +
 		"vColor = aVertexColor;" +
+	"}";
+
+var spotLightFragShader = 
+	"precision mediump float;" +
+	"uniform vec2 lightLocation;" +
+	"uniform vec3 lightColor;" +
+	"uniform float screenHeight;" +
+	"void main() {" +
+		"float distance  = length( lightLocation - gl_FragCoord.xy );" +
+    	"float intensity = 1.0 - min( distance, 100.0 )/ 100.0;" +
+    	"gl_FragColor = vec4(intensity, intensity, intensity, 0.5) * vec4(lightColor, 1);" +
 	"}";
 	
 var colourFragShader = 

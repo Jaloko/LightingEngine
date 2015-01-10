@@ -15,7 +15,7 @@ function setupEventListeners() {
     // Checks for mouse click
     canvas.addEventListener("mousedown", function(evt) {
         if(evt.button == 0) {
-            le.createSpotLight(mousePos.x, mousePos.y);
+            le.createPointLight(mousePos.x, mousePos.y);
         }
     }, false);
     canvas.addEventListener("mousewheel", function(evt) {
@@ -53,7 +53,7 @@ function init() {
         
     }
     le.setupColourSpectrum();
-    le.createSpotLight(mousePos.x, mousePos.y);
+    le.createPointLight(mousePos.x, mousePos.y);
 
 	le.init();
 	update();
