@@ -3,12 +3,13 @@ var fpsCount = 0;
 var fps = 0;
 var logFPS = true;
 
-function Light(x, y, rotation, type, red, green, blue, intensity) {
+function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     this.location = {
         x : x,
         y : y
     },
     this.rotation = rotation,
+    this.radius = radius,
     this.type = type,
     this.bufferIndex,
     this.red = red,
@@ -21,6 +22,13 @@ function Light(x, y, rotation, type, red, green, blue, intensity) {
     },
     this.setRotation = function(angle) {
         this.rotation = angle;
+    },
+    this.setRadius = function(radius) {
+        if(this.type == "point" || this.type == "directional") {
+            console.log("Note: Settings the radius of a point or directional light will not affect it.");
+        } else {
+            this.radius = radius;
+        }
     }
 }
 
@@ -337,7 +345,6 @@ function LightingEngine(canvas) {
     },
     this.update = function() {
         fpsCount++;
-
         if(new Date().getTime() > time + 1000) {
             time += 1000;
             fps = fpsCount;
@@ -419,6 +426,9 @@ function LightingEngine(canvas) {
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
             this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
             this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+            if(this.lights[l].radius != null) {
+                this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+            }
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
             this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
             var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
@@ -447,6 +457,9 @@ function LightingEngine(canvas) {
             } 
             this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
             this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+            if(this.lights[l].radius != null) {
+                this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+            }
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
@@ -593,8 +606,8 @@ function LightingEngine(canvas) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }
     },
-    this.createSpotLight = function(x, y) {
-        this.lights.push(new Light(x, y, 0, "spot", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
+    this.createSpotLight = function(x, y, radius) {
+        this.lights.push(new Light(x, y, 0, "spot", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity, radius));
         if(this.initialized == true) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }

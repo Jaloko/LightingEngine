@@ -25,11 +25,12 @@ var spotLightFragShader =
 	"precision mediump float;" +
 	"uniform vec2 lightLocation;" +
 	"uniform vec3 lightColor;" +
+	"uniform float radius;" +
 	"uniform float screenHeight;" +
 	"void main() {" +
 		"float distance  = length( lightLocation - gl_FragCoord.xy );" +
-    	"float intensity = 1.0 - min( distance, 100.0 )/ 100.0;" +
-    	"gl_FragColor = vec4(intensity, intensity, intensity, 0.5) * vec4(lightColor, 1);" +
+    	"float intensity = 1.0 - min( distance, radius ) / radius;" +
+    	"gl_FragColor = vec4(intensity, intensity, intensity, 0.1) * vec4(lightColor.r / 10.0, lightColor.g / 10.0, lightColor.b / 10.0, 1);" +
 	"}";
 	
 var colourFragShader = 
