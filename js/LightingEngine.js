@@ -25,7 +25,7 @@ function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     },
     this.setRadius = function(radius) {
         if(this.type == "point" || this.type == "directional") {
-            console.log("Note: Settings the radius of a point or directional light will not affect it.");
+            console.log("Note: Setting the radius of a point or directional light will not affect it.");
         } else {
             this.radius = radius;
         }
@@ -36,12 +36,17 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.x = x,
     this.y = y,
     this.rotation = 0,
+    this.rotationPoint = {
+        x: 0,
+        y: 0,
+    },
     this.faceSize = faceSize,
     this.vertices = vertices,
     this.shadowVertices = shadowVertices,
     this.bufferIndex,
     this.textureURL = textureURL,
     this.textureIndex,
+    this.rotationCalc = false,
     // This should also be temporary
     this.dontRender = false,
     this.getVertices = function() {
@@ -50,46 +55,36 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.setPosition = function(x, y) {
         this.x = x;
         this.y = y;
-        var a = degToRad(this.rotation);
-        for(var i = 0; i < shadowVertices.length; i++) {
-            var px = this.x + this.vertices[i].x;
-            var py = this.y + this.vertices[i].y;
-            if(this.textureURL == null) {
-                var ox = (this.x);
-                var oy = (this.y); 
-            } else {
-                var ox = (this.x + this.faceSize / 2);
-                var oy = (this.y + this.faceSize / 2); 
-            }
-            var x = Math.cos(a) * (px-ox) - Math.sin(a) * (py - oy) + ox;
-            var y = Math.sin(a) * (px-ox) + Math.cos(a) * (py - oy) + oy;
-            this.shadowVertices[i].x = x;
-            this.shadowVertices[i].y = y;
-        } 
+        this.rotationCalc = true;
     },
     this.setRotation = function(angle) {
         if(this.rotation != angle) {
             this.rotation = angle;
-            var a = degToRad(this.rotation);
-            for(var i = 0; i < shadowVertices.length; i++) {
-                var px = this.x + this.vertices[i].x;
-                var py = this.y + this.vertices[i].y;
-                if(this.textureURL == null) {
-                    var ox = (this.x);
-                    var oy = (this.y); 
-                } else {
-                    var ox = (this.x + this.faceSize / 2);
-                    var oy = (this.y + this.faceSize / 2); 
-                }
-                var x = Math.cos(a) * (px-ox) - Math.sin(a) * (py - oy) + ox;
-                var y = Math.sin(a) * (px-ox) + Math.cos(a) * (py - oy) + oy;
-                this.shadowVertices[i].x = x;
-                this.shadowVertices[i].y = y;
-            } 
+            this.rotationCalc = true;
         }
+    },
+    this.setRotationPoint = function(x, y) {
+        this.rotationPoint = {
+            x: x,
+            y: y
+        };
+        this.rotationCalc = true;
+    }
+    this.calculateRotation = function() {
+        var a = degToRad(this.rotation);
+        for(var i = 0; i < shadowVertices.length; i++) {
+            var px = this.x + this.vertices[i].x;
+            var py = this.y + this.vertices[i].y;
+            var ox = this.rotationPoint.x;
+            var oy = this.rotationPoint.y;
+            var x = Math.cos(a) * (px-ox) - Math.sin(a) * (py - oy) + ox;
+            var y = Math.sin(a) * (px-ox) + Math.cos(a) * (py - oy) + oy;
+            this.shadowVertices[i].x = x;
+            this.shadowVertices[i].y = y;
+        }
+        this.rotationCalc = false;
     }
 }
-
 
 function LightingEngine(canvas) {
     this.gl,
@@ -377,6 +372,18 @@ function LightingEngine(canvas) {
                 console.log("----------------");   
             }
         }
+
+        for(var f = 0; f < this.foreground.length; f++) {
+            if(this.foreground[f].rotationCalc == true) {
+                this.foreground[f].calculateRotation();
+            }
+        }
+
+        for(var b = 0; b < this.background.length; b++) {
+            if(this.background[b].rotationCalc == true) {
+                this.background[b].calculateRotation();
+            }
+        }
     },
     this.render = function() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -388,12 +395,12 @@ function LightingEngine(canvas) {
 
         this.setCurrentShaderProgram(this.shaderProgram);
         this.gl.enable(this.gl.STENCIL_TEST);
+        this.gl.depthMask(false);
         for(var l = 0; l < this.lights.length; l++) {  
             var theVertices = [];       
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.REPLACE);
             this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
             this.gl.colorMask(false, false, false, false);
-            this.gl.depthMask(false);
             for(var f = 0; f < this.foreground.length; f++) {
                 if(this.foreground[f].dontRender == false) {
                     var vertices = this.foreground[f].getVertices();
@@ -526,14 +533,14 @@ function LightingEngine(canvas) {
                 this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[array[i].textureIndex]);
                 this.gl.uniform1i(this.textureShaderProgram.samplerUniform, 0); 
                 var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
-                var matrixWidth = this.convertToMatrix(array[i].faceSize, true);
-                var matrixHeight = this.convertToMatrix(array[i].faceSize, false);
+                var matrixX = this.convertToMatrix(array[i].rotationPoint.x - array[i].x, true);
+                var matrixY = this.convertToMatrix(array[i].rotationPoint.y - array[i].y, false);
                 mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
                 this.mvPushMatrix();
                 // Move matrix to center of shape
-                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixWidth / 2, matrixHeight / 2, 0.0]);
+                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixX, matrixY, 0.0]);
                 mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(array[i].rotation), [0, 0, 1]);
-                mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixWidth / 2, -matrixHeight / 2, 0.0]);
+                mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixX, -matrixY, 0.0]);
                 this.setMatrixUniforms(this.textureShaderProgram); 
             }
             this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.objectBuffers[array[i].bufferIndex].numItems);
@@ -586,7 +593,6 @@ function LightingEngine(canvas) {
             {x: faceSize, y: 0}
         ];
         var shadowVertices = [
-            // There is a problem here somewhere
             {x: xPos,y: yPos},
             {x: xPos, y: faceSize + yPos},
             {x: faceSize + xPos, y: faceSize + yPos},
@@ -608,6 +614,32 @@ function LightingEngine(canvas) {
             }
         }
     },
+    this.createCustomPolygon = function(xPos, yPos, faceSize, vertices, textureURL, isForeground) {
+        if(isForeground == null) {
+            isForeground = false;
+        }
+        var shadowVertices = [];
+
+        for(var v = 0; v < vertices.length; v++) {
+            shadowVertices.push({x: xPos + vertices[v].x, y: yPos + vertices[v].y});
+        }
+
+        if(isForeground == true) {
+            this.foreground.push(new Polygon(xPos, yPos, faceSize, vertices, shadowVertices, textureURL));
+        } else if(isForeground == false) {
+            this.background.push(new Polygon(xPos, yPos, faceSize, vertices, shadowVertices, textureURL));
+        }
+
+        if(this.initialized == true) {
+            if(isForeground == true) {
+                this.initPolygonBuffer(this.foreground, this.foreground.length - 1); 
+                this.assignTextureIndices(this.foreground, this.foreground.length - 1);
+            } else {
+                this.initPolygonBuffer(this.background, this.background.length - 1); 
+                this.assignTextureIndices(this.background, this.background.length - 1); 
+            }
+        }  
+    }
     this.getForeground = function(index) {
         if(index >= this.foreground.length) {
             console.log("Error: Cannot get foreground object with index: " + index + ". The maximum possible index is: " + (this.foreground.length - 1));
@@ -826,7 +858,10 @@ function LightingEngine(canvas) {
         this.mvMatrix = this.mvMatrixStack.pop();
     },
     this.resize = function(width, height) {
-        canvas.width = width;
+        //
+        //Function currently disabled, doesnt work completely correctly
+        //
+        /*canvas.width = width;
         canvas.height = height;
         mat4.translate(this.mvMatrix, this.mvMatrix, [+this.gl.viewportRatio , +1.0 , 0.0]);
         this.gl.viewportWidth = width;
@@ -834,7 +869,7 @@ function LightingEngine(canvas) {
         this.gl.viewportRatio = width / height;
         this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
         mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
-        mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);
+        mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);*/
     }
 }
 
