@@ -92,6 +92,8 @@ function LightingEngine(canvas) {
     this.mvMatrix = mat4.create(),
     this.pMatrix = mat4.create(),
     this.mvMatrixStack = [],
+    this.xOffset = 0,
+    this.yOffset = 0,
     this.currentProgram,
     this.shaderProgram,
     this.shaderProgram2,
@@ -387,7 +389,7 @@ function LightingEngine(canvas) {
     },
     this.render = function() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
+        mat4.translate(this.mvMatrix, this.mvMatrix, [this.convertToMatrix(-this.xOffset, true), this.convertToMatrix(-this.yOffset, false), 0.0]); 
         for(var b = 0; b < this.background.length; b++) {
             this.renderObject(this.background, b);
         }
@@ -506,6 +508,8 @@ function LightingEngine(canvas) {
         }
         this.gl.disable(this.gl.BLEND);
 
+        // Camera translation
+        mat4.translate(this.mvMatrix, this.mvMatrix, [this.convertToMatrix(this.xOffset, true), this.convertToMatrix(this.yOffset, false), 0.0]); 
     },
     this.renderObject = function(array, i) {
         if(array[i].dontRender == false) {
@@ -552,7 +556,11 @@ function LightingEngine(canvas) {
     this.setCurrentShaderProgram = function(shaderProgram) {
         this.gl.useProgram(shaderProgram);
         this.currentProgram = shaderProgram;
-    }
+    },
+    this.moveCamera = function(x, y) {
+        this.xOffset = x;
+        this.yOffset = y;
+    },
     this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize, isForeground) {
         if(numberOfVertices < 3) {
             console.log("Error: To create a polygon it must have at least 3 vertices!");
