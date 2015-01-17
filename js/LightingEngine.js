@@ -358,6 +358,9 @@ function LightingEngine(canvas) {
         this.gl.enable(this.gl.CULL_FACE);*/
         this.gl.enable(this.gl.STENCIL_TEST);
     },
+    this.setClearColour = function(r, g, b, a) {
+        this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
+    },
     this.setMatrixUniforms = function(shaderProgram) {
         this.gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, this.pMatrix);
         this.gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, this.mvMatrix);
@@ -866,18 +869,18 @@ function LightingEngine(canvas) {
         this.mvMatrix = this.mvMatrixStack.pop();
     },
     this.resize = function(width, height) {
-        //
-        //Function currently disabled, doesnt work completely correctly
-        //
-        /*canvas.width = width;
-        canvas.height = height;
-        mat4.translate(this.mvMatrix, this.mvMatrix, [+this.gl.viewportRatio , +1.0 , 0.0]);
-        this.gl.viewportWidth = width;
-        this.gl.viewportHeight = height;
-        this.gl.viewportRatio = width / height;
-        this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
-        mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
-        mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);*/
+        if(width != canvas.width || height != canvas.height) {
+            canvas.width = width;
+            canvas.height = height;
+            mat4.translate(this.mvMatrix, this.mvMatrix, [+this.gl.viewportRatio , +1.0 , 0.0]);
+            this.gl.viewportWidth = width;
+            this.gl.viewportHeight = height;
+            this.gl.viewportRatio = width / height;
+            this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
+            mat4.ortho(this.pMatrix, -this.gl.viewportRatio, this.gl.viewportRatio, -1.0, 1.0, 0.1, 100.0);
+            mat4.translate(this.mvMatrix, this.mvMatrix, [-this.gl.viewportRatio , -1.0 , 0.0]);
+            this.initBuffers();
+        }
     }
 }
 
