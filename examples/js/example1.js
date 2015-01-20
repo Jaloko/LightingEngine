@@ -43,9 +43,15 @@ function init() {
     setupEventListeners();
 
 	le = new LightingEngine(canvas);
-    le.createPolygon(50, 50, 4, 30, true);
+
+    var colour = {
+        r: 25,
+        g: 25,
+        b: 25,
+        a: 255
+    };
     for(var i = 0; i < 50; i++) {
-        le.createPolygon(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), Math.floor(Math.random() * 20) + 3, Math.floor(Math.random() * 50) + 5, true); 
+        le.createPolygon(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), Math.floor(Math.random() * 20) + 3, Math.floor(Math.random() * 50) + 5, colour, true); 
     }
 
     for(var i = 0; i < 50; i++) {
@@ -56,6 +62,7 @@ function init() {
     le.createPointLight(mousePos.x, mousePos.y);
 
 	le.init();
+
 	update();
 }
 

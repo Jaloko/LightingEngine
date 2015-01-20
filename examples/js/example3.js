@@ -64,10 +64,6 @@ function init() {
         }
     }
 
-    for(var i = 0; i < 50; i++) {
-        /*this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
-        
-    }
     le.setupColourSpectrum();
     le.setAmbientLight(25, 25, 25, 255);
     le.createSpotLight(mousePos.x, mousePos.y, radius);
@@ -99,6 +95,7 @@ function update() {
 
     for(var i = 0; i < le.foreground.length; i++) {
         var o = le.getForeground(i);
+        o.setRotationPoint(o.x + o.faceSize / 2, o.y + o.faceSize / 2);
         o.setRotation(rot);
     }
 

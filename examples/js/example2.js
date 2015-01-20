@@ -91,6 +91,7 @@ function update() {
 
     for(var i = 0; i < le.foreground.length; i++) {
         var o = le.getForeground(i);
+        o.setRotationPoint(o.x + o.faceSize / 2, o.y + o.faceSize / 2);
         o.setRotation(rot);
     }
 

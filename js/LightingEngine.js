@@ -32,7 +32,7 @@ function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     }
 }
 
-function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
+function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL, colour) {
     this.x = x,
     this.y = y,
     this.rotation = 0,
@@ -43,6 +43,7 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL) {
     this.faceSize = faceSize,
     this.vertices = vertices,
     this.shadowVertices = shadowVertices,
+    this.colour = colour,
     this.bufferIndex,
     this.textureURL = textureURL,
     this.textureIndex,
@@ -144,8 +145,8 @@ function LightingEngine(canvas) {
         var vertexShader = this.getShaderFromVar(this.gl, mainVertShader, "Vert");
         var spotLightfragmentShader = this.getShaderFromVar(this.gl, spotLightFragShader, "Frag");
         var colourFragmentShader = this.getShaderFromVar(this.gl, colourFragShader, "Frag");
-        var textureVertexShader = this.getShaderFromVar(this.gl, textureFragShader, "Frag");
-        var textureFragmentShader = this.getShaderFromVar(this.gl, textureVertShader, "Vert");
+        var textureFragmentShader = this.getShaderFromVar(this.gl, textureFragShader, "Frag");
+        var textureVertexShader = this.getShaderFromVar(this.gl, textureVertShader, "Vert");
         this.shaderProgram = this.createShader(this.shaderProgram, false, vertexShader, pointLightfragmentShader);
         this.shaderProgram2 = this.createShader(this.shaderProgram2, false, vertexShader, colourFragmentShader);
         this.spotLightShaderProgram = this.createShader(this.spotLightShaderProgram, false, vertexShader, spotLightfragmentShader);
@@ -182,7 +183,9 @@ function LightingEngine(canvas) {
     this.initPolygonBuffer = function(array, i) {
         for(var ii = i; ii >= 0; ii--) {
             if(array[i] != array[ii] && array[i].vertices.length == array[ii].vertices.length &&
-                array[i].faceSize == array[ii].faceSize) {
+                array[i].faceSize == array[ii].faceSize && array[i].colour.r == array[ii].colour.r && 
+                array[i].colour.g == array[ii].colour.g && array[i].colour.b == array[ii].colour.b && 
+                array[i].colour.a == array[ii].colour.a) {
                 array[i].bufferIndex = array[ii].bufferIndex;
             } else if(ii == 0) {
                 array[i].bufferIndex = this.objectBuffers.length;
@@ -235,7 +238,7 @@ function LightingEngine(canvas) {
                     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
                     colors = [];
                     for (var c = 0; c < vertices.length; c++) {
-                      colors = colors.concat([0.1, 0.1, 0.1, 1.0]);
+                      colors = colors.concat([array[i].colour.r / 255, array[i].colour.g / 255, array[i].colour.b / 255, array[i].colour.a / 255]);
                     }
                     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
                     this.objectColourBuffers[array[i].bufferIndex].itemSize = 4;
@@ -564,7 +567,7 @@ function LightingEngine(canvas) {
         this.xOffset = x;
         this.yOffset = y;
     },
-    this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize, isForeground) {
+    this.createPolygon = function(xPos, yPos, numberOfVertices, faceSize, colour, isForeground) {
         if(numberOfVertices < 3) {
             console.log("Error: To create a polygon it must have at least 3 vertices!");
         } else if(numberOfVertices > 52) {
@@ -579,9 +582,9 @@ function LightingEngine(canvas) {
                 shadowVertices.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize) + xPos, y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize) + yPos } );
             }
             if(isForeground == true) {
-                this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices)); 
+                this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, null, colour)); 
             } else if(isForeground == false) {
-                this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices));
+                this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, null, colour));
             }
 
             if(this.initialized == true) {
@@ -609,10 +612,17 @@ function LightingEngine(canvas) {
             {x: faceSize + xPos, y: faceSize + yPos},
             {x: faceSize + xPos, y: yPos}
         ];
+
+        var colour = {
+            r: null,
+            g: null,
+            b: null,
+            a: null
+        }
         if(isForeground == true) {
-            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
+            this.foreground.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL, colour));
         } else if(isForeground == false) {
-            this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL));
+            this.background.push(new Polygon(xPos, yPos, faceSize, polygonVertices, shadowVertices, textureURL, colour));
         }
 
         if(this.initialized == true) {
