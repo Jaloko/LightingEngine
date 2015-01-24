@@ -22,20 +22,24 @@ function setupEventListeners() {
     }, false);
 
     // Checks for mouse click
+    if (canvas.addEventListener) {
+        console.log(true);
+        // IE9, Chrome, Safari, Opera
+        canvas.addEventListener("mousewheel", onMouseMove, false);
+        // Firefox
+        canvas.addEventListener("DOMMouseScroll", onMouseMove, false);
+    }
+    // IE 6/7/8
+    else {
+        canvas.attachEvent("onmousewheel", onMouseMove);
+    }
+
     canvas.addEventListener("mousedown", function(evt) {
         if(evt.button == 0) {
             le.createPointLight(mousePos.x, mousePos.y);
         }
     }, false);
-    canvas.addEventListener("mousewheel", function(evt) {
-        var delta = evt.wheelDelta;
 
-        if(delta > 0) {
-            le.incrementColourSpectrum(20);
-        } else {
-            le.decrementColourSpectrum(20);
-        }
-    }, false);
     document.body.addEventListener("keydown", function(e) {
         keys[e.keyCode] = true;
     });
@@ -43,6 +47,18 @@ function setupEventListeners() {
     document.body.addEventListener("keyup", function(e) {
         keys[e.keyCode] = false;
     });    
+}
+
+function onMouseMove(evt) {
+     // Multi browser support
+    var evt = window.event || evt; // old IE support
+    var delta = Math.max(-1, Math.min(1, (evt.wheelDelta || -evt.detail)));
+
+    if(delta > 0) {
+        le.incrementColourSpectrum(20);
+    } else {
+        le.decrementColourSpectrum(20);
+    } 
 }
 
 
