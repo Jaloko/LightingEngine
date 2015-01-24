@@ -411,33 +411,50 @@ function LightingEngine(canvas) {
             this.gl.colorMask(false, false, false, false);
             for(var f = 0; f < this.foreground.length; f++) {
                 if(this.foreground[f].dontRender == false) {
-                    var vertices = this.foreground[f].getVertices();
-                    for(var v = 0; v < vertices.length; v++) {
-                        var currentVertex = vertices[v];
-                        var nextVertex = vertices[(v + 1) % vertices.length]; 
-                        var edge = Vector2f.sub(nextVertex, currentVertex);
-                        var normal = {
-                            // Inverting these can allow/stop block blending
-                            x: -edge.y,
-                            y: edge.x
-                        }
+                    var r1, r2, bb, cc, d;
+                    if(this.lights[l].type == "spot") {
+                        r1 = this.lights[l].radius;
+                        r2 = 1;
+                        bb = (this.lights[l].location.x) - (this.foreground[f].x + this.foreground[f].faceSize / 2);
+                        bb = bb * bb;
+                        cc = (this.lights[l].location.y) - (this.foreground[f].y + this.foreground[f].faceSize / 2);
+                        cc = cc * cc;
+                        d = Math.sqrt(bb + cc);
+                    } else {
+                        r1 = 1;
+                        r2 = 1;
+                        d = 1;
+                    }
 
-                        var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
-                        if(Vector2f.dot(normal, lightToCurrent) > 0) {
-                            var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
-                            var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
+                    if(r1 + r2 > d) {
+                        var vertices = this.foreground[f].getVertices();
+                        for(var v = 0; v < vertices.length; v++) {
+                            var currentVertex = vertices[v];
+                            var nextVertex = vertices[(v + 1) % vertices.length]; 
+                            var edge = Vector2f.sub(nextVertex, currentVertex);
+                            var normal = {
+                                // Inverting these can allow/stop block blending
+                                x: -edge.y,
+                                y: edge.x
+                            }
 
-                            theVertices.push(
-                                // Triangle 1
-                                this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
-                                this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
-                                this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-                                // Triangle 2
-                                this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
-                                this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-                                this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );
-                        }
-                    } 
+                            var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
+                            if(Vector2f.dot(normal, lightToCurrent) > 0) {
+                                var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
+                                var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
+
+                                theVertices.push(
+                                    // Triangle 1
+                                    this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
+                                    this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
+                                    this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
+                                    // Triangle 2
+                                    this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
+                                    this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
+                                    this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );
+                            }
+                        } 
+                    }
                 }
             }
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
@@ -479,7 +496,6 @@ function LightingEngine(canvas) {
             this.mvPopMatrix();
             mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
             this.gl.disable(this.gl.BLEND);
-            /*gl.useProgram(0);*/
             this.gl.clear(this.gl.STENCIL_BUFFER_BIT);       
         }
 

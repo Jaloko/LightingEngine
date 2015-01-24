@@ -44,20 +44,12 @@ function init() {
 
 	le = new LightingEngine(canvas);
 
-    var colour = {
-        r: 25,
-        g: 25,
-        b: 25,
-        a: 255
-    };
+    var colour = { r: 25, g: 25, b: 25, a: 255 };
+
     for(var i = 0; i < 50; i++) {
         le.createPolygon(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), Math.floor(Math.random() * 20) + 3, Math.floor(Math.random() * 50) + 5, colour, true); 
     }
 
-    for(var i = 0; i < 50; i++) {
-        /*this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
-        
-    }
     le.setupColourSpectrum();
     le.createPointLight(mousePos.x, mousePos.y);
 

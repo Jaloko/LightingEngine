@@ -62,10 +62,6 @@ function init() {
         }
     }
 
-    for(var i = 0; i < 50; i++) {
-        /*this.createPolygon(Math.floor(Math.random() * this.gl.viewportWidth), Math.floor(Math.random() * this.gl.viewportHeight), Math.floor(Math.random() * 10) + 3, Math.floor(Math.random() * 50) + 5);*/
-        
-    }
     le.setupColourSpectrum();
     le.setAmbientLight(25, 25, 25, 255);
     le.createPointLight(mousePos.x, mousePos.y);
