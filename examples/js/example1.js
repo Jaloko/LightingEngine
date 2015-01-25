@@ -14,7 +14,6 @@ function setupEventListeners() {
 
     // Checks for mouse click
     if (canvas.addEventListener) {
-        console.log(true);
         // IE9, Chrome, Safari, Opera
         canvas.addEventListener("mousewheel", onMouseMove, false);
         // Firefox
