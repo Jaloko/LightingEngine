@@ -22,3 +22,8 @@ le.render();
 ```
 
 This will start the engine with the provided canvas, create a green pentagon at x = 100 and y = 100 and put it in the foreground layer, set the light colour to red, create a point light at x = 200 and y = 200 and finally initialize the engine. After this the engine is updated and then renders to the canvas.
+
+A more in-depth getting started guide can be found on the wiki [right here](https://github.com/Jaloko/LightingEngine/wiki/Getting-started). 
+
+## Documentation
+The lighting engine is fully documented and can be found on the [wiki](https://github.com/Jaloko/LightingEngine/wiki).
