@@ -5,7 +5,7 @@ function resize() {
 
 function changeExample(url, element) {
     var iframe = document.getElementById("iframe").src = url;
-    for(var i = 1; i <= 3; i++) {
+    for(var i = 1; i <= 4; i++) {
         document.getElementById("example" + i).className = "content-cell";
     }
     document.getElementById(element + "").className = "content-cell selected";
