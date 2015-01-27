@@ -1,17 +1,21 @@
 <!doctype html>
 <html>
-<head>
-	<title>Crate Game</title>
-	<link rel="stylesheet" type="text/css" href="css/main.css"/>
-	<script type="text/javascript" src="js/gl-matrix-min.js"></script>
-	<script type="text/javascript" src="js/Vector.js"></script>
-	<script type="text/javascript" src="js/Shaders.js"></script>
-	<script type="text/javascript" src="js/LightingEngine.js"></script>
-	<script type="text/javascript" src="js/FontRenderer.min.js"></script>
-	<script type="text/javascript" src="js/game.js"></script>
-</head>
+	<head>
+		<title>2D WebGL Lighting Engine Example 3</title>
+		<link rel="stylesheet" type="text/css" href="css/main.css"/>
+		<script type="text/javascript" src="../../js/gl-matrix-min.js"></script>
+		<script type="text/javascript" src="../../js/Vector.js"></script>
+		<script type="text/javascript" src="../../js/Shaders.js"></script>
+		<script type="text/javascript" src="../../js/LightingEngine.js"></script>
+		<script type="text/javascript" src="js/example4.js"></script>
+	</head>
 	<body onload="init();">
-		<canvas id="canvas" width="1280" height="720"></canvas>
+		<div id="example-content">
+			<canvas id="canvas" width="1280" height="720"></canvas>
+			<p>Use the mouse scroll wheel to change light colour<p>
+			<p>Use the "A" and "D" keys to adjust the light intensity<p>
+			<p>Use the "W" and "S" keys to rotate the light<p>
+		</div>
 	</body>
 </html>
 

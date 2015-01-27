@@ -3,7 +3,14 @@ body {
 	font-size: 1em;
 	margin: 0;
 	padding: 0;
+	color: #fff;
+	background-color: #112;
+}
+
+#example-content {
 	text-align: center;
-	width: 100%;
-	height: 100%;
+}
+
+#example-content p {
+	color: #4F4F73;
 }
