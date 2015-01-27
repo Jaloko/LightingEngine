@@ -1,8 +1,3 @@
-var time =  new Date().getTime();
-var fpsCount = 0;
-var fps = 0;
-var logFPS = true;
-
 function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     this.location = {
         x : x,
@@ -119,7 +114,12 @@ function LightingEngine(canvas) {
     this.shadowBuffers = [],
     this.shadowColourBuffers = [],
     this.textures = [],
+    this.time = new Date().getTime(),
+    this.fpsCount = 0,
+    this.fps = 0,
+    this.logFPS = false,
     this.initialized = false,
+    this.foregroundBlending = false,
     this.init = function() {
         this.initGL();
         this.initShaders();
@@ -369,14 +369,13 @@ function LightingEngine(canvas) {
         this.gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, this.mvMatrix);
     },
     this.update = function() {
-        fpsCount++;
-        if(new Date().getTime() > time + 1000) {
-            time += 1000;
-            fps = fpsCount;
-            fpsCount = 0;
-            if(logFPS == true) {
-                console.log("FPS: " + fps);
-                console.log("# of Lights: " + this.lights.length);
+        this.fpsCount++;
+        if(new Date().getTime() > this.time + 1000) {
+            this.time += 1000;
+            this.fps = this.fpsCount;
+            this.fpsCount = 0;
+            if(this.logFPS == true) {
+                console.log("FPS: " + this.fps);
                 console.log("----------------");   
             }
         }
@@ -473,7 +472,7 @@ function LightingEngine(canvas) {
             this.gl.colorMask(true, true, true, true);
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
             this.gl.stencilFunc(this.gl.EQUAL, 0, 1);
-            if(this.lights[l].type == "point") {
+            if(this.lights[l].type == "point" || this.lights[l].type == "directional") {
                 this.setCurrentShaderProgram(this.shaderProgram);
             } else if(this.lights[l].type == "spot") {
                 this.setCurrentShaderProgram(this.spotLightShaderProgram);
@@ -504,31 +503,33 @@ function LightingEngine(canvas) {
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
-        for(var l = 0; l < this.lights.length; l++) {
-            if(this.lights[l].type == "point") {
-                this.setCurrentShaderProgram(this.shaderProgram);
-            } else if(this.lights[l].type == "spot") {
-                this.setCurrentShaderProgram(this.spotLightShaderProgram);
-            } 
-            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
-            if(this.lights[l].radius != null) {
-                this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+        if(this.foregroundBlending == true) {
+            for(var l = 0; l < this.lights.length; l++) {
+                if(this.lights[l].type == "point" || this.lights[l].type == "directional") {
+                    this.setCurrentShaderProgram(this.shaderProgram);
+                } else if(this.lights[l].type == "spot") {
+                    this.setCurrentShaderProgram(this.spotLightShaderProgram);
+                } 
+                this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+                this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+                if(this.lights[l].radius != null) {
+                    this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+                }
+                this.gl.enable(this.gl.BLEND);
+                this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
+                this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+                var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
+                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+                this.mvPushMatrix();
+                mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]);
+                this.setMatrixUniforms(this.currentProgram);
+                this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
+                this.mvPopMatrix(); 
+                mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
             }
-            this.gl.enable(this.gl.BLEND);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
-            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
-            var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
-            mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
-            this.mvPushMatrix();
-            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]);
-            this.setMatrixUniforms(this.currentProgram);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
-            this.mvPopMatrix(); 
-            mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
+            this.gl.disable(this.gl.BLEND);
         }
-        this.gl.disable(this.gl.BLEND);
 
         // Camera translation
         mat4.translate(this.mvMatrix, this.mvMatrix, [this.convertToMatrix(this.xOffset, true), this.convertToMatrix(this.yOffset, false), 0.0]); 
@@ -790,6 +791,12 @@ function LightingEngine(canvas) {
             this.colourIndex = this.colourSpectrum.length - 1;
         }
         this.setLightColour(this.colourSpectrum[this.colourIndex].r, this.colourSpectrum[this.colourIndex].g, this.colourSpectrum[this.colourIndex].b);
+    },
+    this.setForegroundBlending = function(blend) {
+        this.foregroundBlending = blend;
+    },
+    this.logFps = function(logFPS) {
+        this.logFPS = logFPS;
     },
     this.convertToMatrix = function(value, isWidth) {
         if(isWidth == true) {
