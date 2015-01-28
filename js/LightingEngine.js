@@ -11,9 +11,15 @@ function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     this.green = green,
     this.blue = blue,
     this.intensity = intensity,
+    this.extendedLightMode = false,
+    this.locationChanged = true,
+    this.lightIsOnAPolygon = false,
     this.setPosition = function(x, y) {
-        this.location.x = x;
-        this.location.y = y;
+        if(this.location.x != x || this.location.y != y) {
+            this.location.x = x;
+            this.location.y = y;
+            this.locationChanged = true;  
+        }
     },
     this.setRotation = function(angle) {
         this.rotation = angle;
@@ -24,6 +30,17 @@ function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
         } else {
             this.radius = radius;
         }
+    },
+    this.setColour = function(r, g, b) {
+        this.red = r;
+        this.green = g;
+        this.blue = b;
+    },
+    this.setIntensity = function(intensity) {
+        this.intensity = intensity;
+    },
+    this.setExtendedLightMode = function(lightMode) {
+        this.extendedLightMode = lightMode;
     }
 }
 
@@ -380,6 +397,37 @@ function LightingEngine(canvas) {
             }
         }
 
+        for(var l = 0; l < this.lights.length; l++) {
+            if(this.lights[l].extendedLightMode == false) {
+                if(this.lights[l].locationChanged == true) {
+                    for(var f = 0; f < this.foreground.length; f++) {
+                        var nVert = this.foreground[f].shadowVertices.length;
+                        var vertX = [];
+                        var vertY = [];
+                        for(var i = 0; i < nVert; i++) {
+                            vertX.push(this.foreground[f].shadowVertices[i].x);
+                            vertY.push(this.foreground[f].shadowVertices[i].y);
+                        }
+                        var testX = this.lights[l].location.x;
+                        var testY = this.lights[l].location.y;
+                        var num = polygonCollision(nVert, vertX, vertY, testX, testY);
+                        if(num == true) {
+                            this.lights[l].lightIsOnAPolygon = true;
+                            this.lights[l].locationChanged = false;
+                            break;
+                        } else {
+                            this.lights[l].lightIsOnAPolygon = false;
+                        } 
+                        this.lights[l].locationChanged = false; 
+                    }
+                }
+            } else {
+                this.lights[l].locationChanged = false;
+                this.lights[l].lightIsOnAPolygon = false;  
+            }
+        }
+
+
         for(var f = 0; f < this.foreground.length; f++) {
             if(this.foreground[f].rotationCalc == true) {
                 this.foreground[f].calculateRotation();
@@ -391,12 +439,22 @@ function LightingEngine(canvas) {
                 this.background[b].calculateRotation();
             }
         }
+
     },
     this.render = function() {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         mat4.translate(this.mvMatrix, this.mvMatrix, [this.convertToMatrix(-this.xOffset, true), this.convertToMatrix(-this.yOffset, false), 0.0]); 
         for(var b = 0; b < this.background.length; b++) {
-            this.renderObject(this.background, b);
+            if(checkScreenBounds(this.xOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.yOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportWidth + (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportHeight + (this.background[b].faceSize * this.background[b].vertices.length), this.background[b].x, this.background[b].y)) {
+                this.renderObject(this.background, b);
+            }
+        }
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+
+        for(var f = 0; f < this.foreground.length; f++) {
+            if(checkScreenBounds(this.xOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.yOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportWidth + (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportHeight + (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.foreground[f].x, this.foreground[f].y)) {
+                this.renderObject(this.foreground, f); 
+            }
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
@@ -432,9 +490,19 @@ function LightingEngine(canvas) {
                             var nextVertex = vertices[(v + 1) % vertices.length]; 
                             var edge = Vector2f.sub(nextVertex, currentVertex);
                             var normal = {
-                                // Inverting these can allow/stop block blending
-                                x: -edge.y,
-                                y: edge.x
+                                x: edge.y,
+                                y: -edge.x
+                            }
+                            if(this.lights[l].extendedLightMode == false) {
+                                if(this.lights[l].lightIsOnAPolygon == true) {
+                                    // Inverting these can allow/stop block blending
+                                    normal.x = -edge.y;
+                                    normal.y = edge.x;
+                                } else {
+                                    // Inverting these can allow/stop block blending
+                                    normal.x = edge.y;
+                                    normal.y = -edge.x;
+                                }  
                             }
 
                             var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
@@ -497,11 +565,6 @@ function LightingEngine(canvas) {
             this.gl.disable(this.gl.BLEND);
             this.gl.clear(this.gl.STENCIL_BUFFER_BIT);       
         }
-
-        for(var f = 0; f < this.foreground.length; f++) {
-            this.renderObject(this.foreground, f);
-        }
-        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
         if(this.foregroundBlending == true) {
             for(var l = 0; l < this.lights.length; l++) {
@@ -919,4 +982,23 @@ function LightingEngine(canvas) {
 
 function degToRad(degrees) {
     return degrees * Math.PI / 180;
+}
+
+function polygonCollision(nVert, vertX, vertY, testX, testY) {
+    var i, j, c = 0;
+    for (var i = 0, j = nVert-1; i < nVert; j = i++) {
+    if ( ((vertY[i]>testY) != (vertY[j]>testY)) &&
+     (testX < (vertX[j]-vertX[i]) * (testY-vertY[i]) / (vertY[j]-vertY[i]) + vertX[i]) )
+       c = !c;
+    }
+    return c;
+}
+
+function checkScreenBounds(boundX, boundY, boundWidth, boundHeight, testX, testY) {
+    if(testX >= boundX && testX <= boundX + boundWidth &&
+        testY >= boundY && testY <= boundY + boundHeight) {
+        return true;
+    } else {
+        return false;
+    }
 }

@@ -80,8 +80,7 @@ function update() {
         intensity-=1;
         le.setLightIntensity(intensity);
     }
-    le.getLight(le.lights.length - 1).location.x = mousePos.x;
-    le.getLight(le.lights.length - 1).location.y = Math.abs(mousePos.y - canvas.height);   
+    le.getLight(le.lights.length - 1).setPosition(mousePos.x, Math.abs(mousePos.y - canvas.height));
             
     le.getLight(le.lights.length - 1).red = le.lightColour.r;
     le.getLight(le.lights.length - 1).green = le.lightColour.g;
