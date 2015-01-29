@@ -6,6 +6,8 @@ var mousePos = {
 	y: 0
 };
 var intensity = 40;
+var lightSelection = "point";
+var radius = 200, angle = 90;
 
 var images = [
 "img/brick.png",
@@ -15,8 +17,6 @@ var images = [
 "img/dark-brick.png"];
 
 var rot = 0;
-
-var angle = 90;
 
 function setupEventListeners() {
     canvas.addEventListener('mousemove', function(evt) {
@@ -37,7 +37,13 @@ function setupEventListeners() {
 
     canvas.addEventListener("mousedown", function(evt) {
         if(evt.button == 0) {
-            le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+            if(lightSelection == "point") {
+                le.createPointLight(mousePos.x, mousePos.y);
+            } else if(lightSelection == "directional") {
+                le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+            } else if(lightSelection == "spot") {
+                le.createSpotLight(mousePos.x, mousePos.y, radius);
+            }
         }
     }, false);
 
@@ -62,6 +68,7 @@ function onMouseMove(evt) {
     } 
 }
 
+
 function init() {
 	canvas = document.getElementById("canvas");
 
@@ -69,10 +76,10 @@ function init() {
 
 	le = new LightingEngine(canvas);
     for(var i = 0; i < 50; i++) {
-        le.createSquare(Math.floor(Math.random() * canvas.width), Math.floor(Math.random() * canvas.height), 50, images[Math.floor(Math.random() * 4)], true);
+        le.createSquare(Math.floor(Math.random() * 1920), Math.floor(Math.random() * canvas.height), 50, images[Math.floor(Math.random() * 4)], true);
     }
 
-    for(var x = 0; x < canvas.width / 50; x++) {
+    for(var x = 0; x < 1920 / 50; x++) {
         for(var y = 0; y < canvas.height / 50; y++) {
             le.createSquare(x * 50, y * 50, 50, "img/stones.png", false);   
         }
@@ -80,31 +87,75 @@ function init() {
 
     le.setupColourSpectrum();
     le.setAmbientLight(25, 25, 25, 255);
-    le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+    le.createPointLight(mousePos.x, mousePos.y);
 
 	le.init();
 	update();
 }
 
 function update() {
-    if(keys[65] == true) {
+    if(window.innerWidth - 10 != le.gl.viewportWidth || window.innerHeight * 0.7 != le.gl.viewportHeight) {
+        le.resize(window.innerWidth - 10, window.innerHeight * 0.7);
+    }
+    // 1
+    if(keys[49] == true) {
+        lightSelection = "point";
+        le.removeLight(le.lights.length - 1);
+        le.createPointLight(mousePos.x, mousePos.y);
+    } 
+    // 2
+    else if(keys[50] == true) {
+        lightSelection = "directional";
+        le.removeLight(le.lights.length - 1);
+        le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+    }
+    // 3
+    else if(keys[51] == true) {
+        lightSelection = "spot";
+        le.removeLight(le.lights.length - 1);
+        le.createSpotLight(mousePos.x, mousePos.y, radius);
+    } 
+    // A
+    else if(keys[65] == true) {
         intensity+=1;
         le.setLightIntensity(intensity);
-    } else if(keys[68] == true) {
-        intensity-=1;
+    } 
+    // D
+    else if(keys[68] == true) {
+        if(intensity <= 0) {
+            intensity = 0;
+        } else {
+            intensity-=1;
+        }
         le.setLightIntensity(intensity);
-    } else if(keys[83] == true) {
-        angle--;
-        if(angle <= 0) {
-            angle = 360;
+    } 
+    // W
+    else if(keys[83] == true) {
+        if(lightSelection == "directional") {
+            angle--;
+            if(angle <= 0) {
+                angle = 360;
+            }
+            le.getLight(le.lights.length - 1).setRotation(angle); 
+        } else if(lightSelection == "spot") {
+            radius--;
+            le.getLight(le.lights.length - 1).setRadius(radius);
         }
-        le.getLight(le.lights.length - 1).setRotation(angle);
-    } else if(keys[87] == true) {
-        angle++;
-        if(angle >= 360) {
-            angle = 0;
+
+    }
+    // S 
+    else if(keys[87] == true) {
+        if(lightSelection == "directional") {
+            angle++;
+            if(angle >= 360) {
+                angle = 0;
+            }
+            le.getLight(le.lights.length - 1).setRotation(angle);
+        } else if(lightSelection == "spot") {
+            radius++;
+            le.getLight(le.lights.length - 1).setRadius(radius);
         }
-        le.getLight(le.lights.length - 1).setRotation(angle);
+
     }
 
     if(rot < 360) {

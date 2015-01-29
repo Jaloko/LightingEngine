@@ -39,9 +39,15 @@ body {
 }
 
 .content-cell {
-	width: 92%;
 	color: #4B5673;
+}
+
+.content-cell a {
+	display: block;
+	width: 92%;
 	padding: 4%;
+	text-decoration: none;
+	color: #464d63;
 }
 
 .selected {

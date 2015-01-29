@@ -5,7 +5,7 @@
 		<link rel="stylesheet" type="text/css" href="css/main.css"/>
 		<script type="text/javascript" src="js/index.js"></script>
 	</head>
-	<body onload="resize();" onresize="resize();">
+	<body onload="pageLoad();" onresize="resize();">
 		<div class="wrapper">
 			<div id="left-col">
 				<div class="title">
@@ -13,38 +13,26 @@
 				</div>
 				<div id="content-list">
 					<div class="content-title">
-						<h2>Point Light</h2>
+						<h2>Demos</h2>
 					</div>
-					<div id="example1" class="content-cell selected" onclick="changeExample('example1/index.html', 'example1')">
-						<a>Random polygons</a>
+					<div id="random-polygons" class="content-cell selected" onclick="changeExample('random-polygons/index.html', 'random-polygons')">
+						<a href="#random-polygons">Random polygons</a>
 					</div>
-					<div id="example2" class="content-cell" onclick="changeExample('example2/index.html', 'example2')">
-						<a>Rotating images</a>
-					</div>
-					<div class="content-title">
-						<h2>Spot Light</h2>
-					</div>
-					<div id="example3" class="content-cell" onclick="changeExample('example3/index.html', 'example3')">
-						<a>Rotating images</a>
-					</div>
-					<div class="content-title">
-						<h2>Directional Light</h2>
-					</div>
-					<div id="example4" class="content-cell" onclick="changeExample('example4/index.html', 'example4')">
-						<a>Rotating images</a>
+					<div id="rotating-bricks" class="content-cell" onclick="changeExample('rotating-bricks/index.html', 'rotating-bricks')">
+						<a href="#rotating-bricks">Rotating bricks</a>
 					</div>
 					<div class="content-title">
 						<h2>Games</h2>
 					</div>
-					<div id="example5" class="content-cell" onclick="changeExample('example5/index.html', 'example5')">
-						<a>Crate game</a>
+					<div id="crate-game" class="content-cell" onclick="changeExample('crate-game/index.html', 'crate-game')">
+						<a href="#crate-game">Crate game</a>
 					</div>
 				</div>
 				<div class="clear">
 				</div>
 			</div>
 			<div id="content">
-				<iframe autofocus id="iframe" src="example1/index.html" width="100%" height="100%" frameborder="0" onload="this.contentWindow.focus()"></iframe>
+				<iframe autofocus id="iframe" src="" width="100%" height="100%" frameborder="0" onload="this.contentWindow.focus()"></iframe>
 			</div>
 		</div>
 	</body>
