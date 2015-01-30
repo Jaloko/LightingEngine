@@ -12,13 +12,12 @@ function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
     this.blue = blue,
     this.intensity = intensity,
     this.extendedLightMode = false,
-    this.locationChanged = true,
     this.lightIsOnAPolygon = false,
+    this.polygonIndex,
     this.setPosition = function(x, y) {
         if(this.location.x != x || this.location.y != y) {
             this.location.x = x;
             this.location.y = y;
-            this.locationChanged = true;  
         }
     },
     this.setRotation = function(angle) {
@@ -66,9 +65,11 @@ function Polygon(x, y, faceSize, vertices, shadowVertices, textureURL, colour) {
         return this.shadowVertices; 
     },
     this.setPosition = function(x, y) {
-        this.x = x;
-        this.y = y;
-        this.rotationCalc = true;
+        if(this.x != x || this.y != y) {
+            this.x = x;
+            this.y = y;
+            this.rotationCalc = true;
+        }
     },
     this.setRotation = function(angle) {
         if(this.rotation != angle) {
@@ -137,6 +138,7 @@ function LightingEngine(canvas) {
     this.logFPS = false,
     this.initialized = false,
     this.foregroundBlending = false,
+    this.convertCallsPerFrame = 0,
     this.init = function() {
         this.initGL();
         this.initShaders();
@@ -391,38 +393,44 @@ function LightingEngine(canvas) {
             this.time += 1000;
             this.fps = this.fpsCount;
             this.fpsCount = 0;
-            if(this.logFPS == true) {
+            if(true) {
                 console.log("FPS: " + this.fps);
                 console.log("----------------");   
             }
+
+            if(true) {
+                console.log("No. Lights: " + this.lights.length);
+                console.log("No. converts: " + this.convertCallsPerFrame);
+                console.log("No. Foreground: " + this.foreground.length);
+                console.log("No. Background: " + this.background.length);
+                console.log("----------------");   
+            }
         }
+        this.convertCallsPerFrame = 0;
 
         for(var l = 0; l < this.lights.length; l++) {
             if(this.lights[l].extendedLightMode == false) {
-                if(this.lights[l].locationChanged == true) {
-                    for(var f = 0; f < this.foreground.length; f++) {
-                        var nVert = this.foreground[f].shadowVertices.length;
-                        var vertX = [];
-                        var vertY = [];
-                        for(var i = 0; i < nVert; i++) {
-                            vertX.push(this.foreground[f].shadowVertices[i].x);
-                            vertY.push(this.foreground[f].shadowVertices[i].y);
-                        }
-                        var testX = this.lights[l].location.x;
-                        var testY = this.lights[l].location.y;
-                        var num = polygonCollision(nVert, vertX, vertY, testX, testY);
-                        if(num == true) {
-                            this.lights[l].lightIsOnAPolygon = true;
-                            this.lights[l].locationChanged = false;
-                            break;
-                        } else {
-                            this.lights[l].lightIsOnAPolygon = false;
-                        } 
-                        this.lights[l].locationChanged = false; 
+                for(var f = 0; f < this.foreground.length; f++) {
+                    var nVert = this.foreground[f].shadowVertices.length;
+                    var vertX = [];
+                    var vertY = [];
+                    for(var i = 0; i < nVert; i++) {
+                        vertX.push(this.foreground[f].shadowVertices[i].x);
+                        vertY.push(this.foreground[f].shadowVertices[i].y);
                     }
+                    var testX = this.lights[l].location.x;
+                    var testY = this.lights[l].location.y;
+                    var num = polygonCollision(nVert, vertX, vertY, testX, testY);
+                    if(num == true) {
+                        this.lights[l].lightIsOnAPolygon = true;
+                        this.lights[l].polygonIndex = f;
+                        break;
+                    } else {
+                        this.lights[l].lightIsOnAPolygon = false;
+                        this.lights[l].polygonIndex = null;
+                    } 
                 }
             } else {
-                this.lights[l].locationChanged = false;
                 this.lights[l].lightIsOnAPolygon = false;  
             }
         }
@@ -466,7 +474,14 @@ function LightingEngine(canvas) {
             this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.REPLACE);
             this.gl.stencilFunc(this.gl.ALWAYS, 1, 1);
             this.gl.colorMask(false, false, false, false);
-            for(var f = 0; f < this.foreground.length; f++) {
+            var foreStart = 0;
+            if(this.lights[l].polygonIndex != null) {
+                foreStart = this.lights[l].polygonIndex;
+            }
+            for(var f = foreStart; f < this.foreground.length; f++) {
+                if(f > foreStart && this.lights[l].polygonIndex != null) {
+                    break;
+                }
                 if(this.foreground[f].dontRender == false) {
                     var r1, r2, bb, cc, d;
                     if(this.lights[l].type == "spot") {
@@ -509,8 +524,8 @@ function LightingEngine(canvas) {
                             if(Vector2f.dot(normal, lightToCurrent) > 0) {
                                 var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
                                 var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
-
-                                theVertices.push(
+                                // Unsure which one peforms better at this point in time
+/*                                 theVertices.push(
                                     // Triangle 1
                                     this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
                                     this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
@@ -518,7 +533,16 @@ function LightingEngine(canvas) {
                                     // Triangle 2
                                     this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
                                     this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-                                    this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );
+                                    this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );*/
+                                    theVertices.push(
+                                    // Triangle 1
+                                    point1.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point1.y / this.gl.viewportHeight * 2,  0.0,
+                                    currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
+                                    point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
+                                    // Triangle 2
+                                    currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
+                                    point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
+                                    nextVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, nextVertex.y / this.gl.viewportHeight * 2,  0.0   );
                             }
                         } 
                     }
@@ -855,6 +879,21 @@ function LightingEngine(canvas) {
         }
         this.setLightColour(this.colourSpectrum[this.colourIndex].r, this.colourSpectrum[this.colourIndex].g, this.colourSpectrum[this.colourIndex].b);
     },
+    this.checkPointCollision = function(testX, testY, object) {
+        var nVert = object.shadowVertices.length;
+        var vertX = [];
+        var vertY = [];
+        for(var i = 0; i < nVert; i++) {
+            vertX.push(object.shadowVertices[i].x);
+            vertY.push(object.shadowVertices[i].y);
+        }
+        var num = polygonCollision(nVert, vertX, vertY, testX, testY);
+        if(num == true) {
+            return true;
+        } else {
+            return false;
+        } 
+    },
     this.setForegroundBlending = function(blend) {
         this.foregroundBlending = blend;
     },
@@ -862,6 +901,7 @@ function LightingEngine(canvas) {
         this.logFPS = logFPS;
     },
     this.convertToMatrix = function(value, isWidth) {
+        this.convertCallsPerFrame++;
         if(isWidth == true) {
             return (value / this.gl.viewportWidth * this.gl.viewportRatio * 2);
         } else {
@@ -869,6 +909,7 @@ function LightingEngine(canvas) {
         }
     },
     this.convertVertToMatrix = function(x, y) {
+        this.convertCallsPerFrame++;
         return verts = { x: x / this.gl.viewportWidth * this.gl.viewportRatio * 2, y: y / this.gl.viewportHeight * 2 };
     },
     this.getShaderFromHTML = function(gl, id) {

@@ -8,6 +8,9 @@ var mousePos = {
 var intensity = 40;
 var lightSelection = "point";
 var radius = 200, angle = 90;
+var leftMouseDown = false;
+var currentObjectSelected = null;
+var objectXoffset, objectYoffset;
 
 var images = [
 "img/brick.png",
@@ -44,8 +47,17 @@ function setupEventListeners() {
             } else if(lightSelection == "spot") {
                 le.createSpotLight(mousePos.x, mousePos.y, radius);
             }
+            leftMouseDown = true;
         }
     }, false);
+
+    canvas.addEventListener("mouseup", function(evt) {
+        if(evt.button == 0) {
+            leftMouseDown = false;
+            currentObjectSelected = null;
+        }
+    }, false);
+
 
     document.body.addEventListener("keydown", function(e) {
         keys[e.keyCode] = true;
@@ -99,22 +111,34 @@ function update() {
     }
     // 1
     if(keys[49] == true) {
-        lightSelection = "point";
-        le.removeLight(le.lights.length - 1);
+        if(lightSelection != "none") {
+            le.removeLight(le.lights.length - 1); 
+        }
         le.createPointLight(mousePos.x, mousePos.y);
+        lightSelection = "point";
     } 
     // 2
     else if(keys[50] == true) {
-        lightSelection = "directional";
-        le.removeLight(le.lights.length - 1);
+        if(lightSelection != "none") {
+            le.removeLight(le.lights.length - 1); 
+        }
         le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+        lightSelection = "directional";
     }
     // 3
     else if(keys[51] == true) {
-        lightSelection = "spot";
-        le.removeLight(le.lights.length - 1);
+        if(lightSelection != "none") {
+            le.removeLight(le.lights.length - 1); 
+        }
         le.createSpotLight(mousePos.x, mousePos.y, radius);
-    } 
+        lightSelection = "spot";
+    }
+    else if(keys[52] == true) {
+        if(lightSelection != "none") {
+            le.removeLight(le.lights.length - 1);
+        }
+        lightSelection = "none";
+    }  
     // A
     else if(keys[65] == true) {
         intensity+=1;
@@ -158,6 +182,29 @@ function update() {
 
     }
 
+    if(lightSelection != "none") {
+        le.getLight(le.lights.length - 1).setPosition(mousePos.x, Math.abs(mousePos.y - canvas.height));
+
+        le.getLight(le.lights.length - 1).red = le.lightColour.r;
+        le.getLight(le.lights.length - 1).green = le.lightColour.g;
+        le.getLight(le.lights.length - 1).blue = le.lightColour.b;
+        le.getLight(le.lights.length - 1).intensity = le.lightIntensity;
+    } else {
+        if(currentObjectSelected == null) {
+            for(var i = 0; i < le.foreground.length; i++) {
+                if(le.checkPointCollision(mousePos.x, Math.abs(mousePos.y - canvas.height), le.getForeground(i))) {
+                    if(leftMouseDown == true) {
+                        currentObjectSelected = le.getForeground(i);
+                        objectXoffset = mousePos.x - currentObjectSelected.x;
+                        objectYoffset = Math.abs(mousePos.y - canvas.height) - currentObjectSelected.y;
+                    }
+                }
+            } 
+        } else {
+            currentObjectSelected.setPosition(mousePos.x - objectXoffset, Math.abs(mousePos.y - canvas.height) - objectYoffset);
+        }     
+    }
+
     if(rot < 360) {
         rot++;
     } else if(rot >= 360) {
@@ -169,13 +216,6 @@ function update() {
         o.setRotationPoint(o.x + o.faceSize / 2, o.y + o.faceSize / 2);
         o.setRotation(rot);
     }
-
-   le.getLight(le.lights.length - 1).setPosition(mousePos.x, Math.abs(mousePos.y - canvas.height));  
-            
-    le.getLight(le.lights.length - 1).red = le.lightColour.r;
-    le.getLight(le.lights.length - 1).green = le.lightColour.g;
-    le.getLight(le.lights.length - 1).blue = le.lightColour.b;
-    le.getLight(le.lights.length - 1).intensity = le.lightIntensity;
 
 	le.update();
 	render();
