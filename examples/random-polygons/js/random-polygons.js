@@ -11,6 +11,7 @@ var radius = 200, angle = 90;
 var leftMouseDown = false;
 var currentObjectSelected = null;
 var objectXoffset, objectYoffset;
+var dirAngleRange = 70;
 
 function setupEventListeners() {
     canvas.addEventListener('mousemove', function(evt) {
@@ -34,7 +35,7 @@ function setupEventListeners() {
             if(lightSelection == "point") {
                 le.createPointLight(mousePos.x, mousePos.y);
             } else if(lightSelection == "directional") {
-                le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+                le.createDirectionalLight(mousePos.x, mousePos.y, angle, dirAngleRange);
             } else if(lightSelection == "spot") {
                 le.createSpotLight(mousePos.x, mousePos.y, radius);
             }
@@ -108,7 +109,7 @@ function update() {
         if(lightSelection != "none") {
             le.removeLight(le.lights.length - 1); 
         }
-        le.createDirectionalLight(mousePos.x, mousePos.y, angle);
+        le.createDirectionalLight(mousePos.x, mousePos.y, angle, dirAngleRange);
         lightSelection = "directional";
     }
     // 3

@@ -1,9 +1,10 @@
-function Light(x, y, rotation, type, red, green, blue, intensity, radius) {
+function Light(x, y, rotation, type, red, green, blue, intensity, radius, angleRange) {
     this.location = {
         x : x,
         y : y
     },
     this.rotation = rotation,
+    this.angleRange = angleRange,
     this.radius = radius,
     this.type = type,
     this.bufferIndex,
@@ -355,10 +356,22 @@ function LightingEngine(canvas) {
                     this.lightBuffers[array[i].bufferIndex].itemSize = 3;
                     this.lightBuffers[array[i].bufferIndex].numItems = 4;  
                 } else if(array[i].type == "directional") {
+                    var originalAngle = array[i].angleRange;
+
+                    var angle = degToRad(originalAngle / 2);
+                    var distance = 200000;
+                    // Point 1
+                    var x = Math.round(0 + distance * Math.cos(angle));
+                    var y = Math.round(0 + distance * Math.sin(angle));
+                    angle = degToRad(-originalAngle / 2);
+                    // Point 2
+                    var xx = Math.round(0 + distance * Math.cos(angle));
+                    var yy = Math.round(0 + distance * Math.sin(angle));
+
                     vertices = [
                         0, 0,  0.0,
-                        this.convertToMatrix(this.gl.viewportWidth, true), this.convertToMatrix(this.gl.viewportHeight, false),  0.0,
-                        this.convertToMatrix(this.gl.viewportWidth, true), this.convertToMatrix(-this.gl.viewportHeight, false),  0.0,
+                        this.convertToMatrix(x, true), this.convertToMatrix(y, false),  0.0,
+                        this.convertToMatrix(xx, true), this.convertToMatrix(yy, false),  0.0,
                     ];
 
                     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.DYNAMIC_DRAW);
@@ -393,12 +406,12 @@ function LightingEngine(canvas) {
             this.time += 1000;
             this.fps = this.fpsCount;
             this.fpsCount = 0;
-            if(true) {
+            if(this.logFPS == true) {
                 console.log("FPS: " + this.fps);
                 console.log("----------------");   
             }
 
-            if(true) {
+            if(false) {
                 console.log("No. Lights: " + this.lights.length);
                 console.log("No. converts: " + this.convertCallsPerFrame);
                 console.log("No. Foreground: " + this.foreground.length);
@@ -803,8 +816,8 @@ function LightingEngine(canvas) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }
     },
-    this.createDirectionalLight = function(x, y, angle) {
-        this.lights.push(new Light(x, y, angle, "directional", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity));
+    this.createDirectionalLight = function(x, y, angle, angleRange) {
+        this.lights.push(new Light(x, y, angle, "directional", this.lightColour.r, this.lightColour.g, this.lightColour.b, this.lightIntensity, null, angleRange));
         if(this.initialized == true) {
             this.initLightBuffer(this.lights, this.lights.length - 1);
         }
