@@ -547,7 +547,7 @@ function LightingEngine(canvas) {
                                     this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
                                     this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
                                     this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );*/
-                                    theVertices.push(
+                                theVertices.push(
                                     // Triangle 1
                                     point1.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point1.y / this.gl.viewportHeight * 2,  0.0,
                                     currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
@@ -584,7 +584,7 @@ function LightingEngine(canvas) {
             } 
             this.gl.enable(this.gl.BLEND);
             this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
-            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x - this.xOffset, this.lights[l].location.y - this.yOffset);
             this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
             if(this.lights[l].radius != null) {
                 this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
@@ -610,7 +610,7 @@ function LightingEngine(canvas) {
                 } else if(this.lights[l].type == "spot") {
                     this.setCurrentShaderProgram(this.spotLightShaderProgram);
                 } 
-                this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x, this.lights[l].location.y);
+                this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x - this.xOffset, this.lights[l].location.y - this.yOffset);
                 this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
                 if(this.lights[l].radius != null) {
                     this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
@@ -645,9 +645,14 @@ function LightingEngine(canvas) {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
                 this.gl.vertexAttribPointer(this.shaderProgram.vertexColorAttribute, this.objectColourBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
                 var matrixPos = this.convertVertToMatrix(array[i].x, array[i].y);
+                var matrixX = this.convertToMatrix(array[i].rotationPoint.x - array[i].x, true);
+                var matrixY = this.convertToMatrix(array[i].rotationPoint.y - array[i].y, false);
                 mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
                 this.mvPushMatrix();
+                // Move matrix to center of shape
+                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixX, matrixY, 0.0]);
                 mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(array[i].rotation), [0, 0, 1]);
+                mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixX, -matrixY, 0.0]);
                 this.setMatrixUniforms(this.shaderProgram2);  
             } else {
                 this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
