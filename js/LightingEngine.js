@@ -112,8 +112,10 @@ function LightingEngine(canvas) {
     this.currentProgram,
     this.shaderProgram,
     this.shaderProgram2,
+    this.pointLightShaderProgram2,
     this.spotLightShaderProgram,
     this.textureShaderProgram,
+    this.pointLightShaderSelected = true,
     this.foreground = [],
     this.background = [],
     this.ambientLight = {
@@ -162,12 +164,14 @@ function LightingEngine(canvas) {
     },
     this.initShaders = function() {
         var pointLightfragmentShader = this.getShaderFromVar(this.gl, pointLightFragShader, "Frag");
+        var pointLightfragmentShader2 = this.getShaderFromVar(this.gl, pointLightFragShader2, "Frag");
         var vertexShader = this.getShaderFromVar(this.gl, mainVertShader, "Vert");
         var spotLightfragmentShader = this.getShaderFromVar(this.gl, spotLightFragShader, "Frag");
         var colourFragmentShader = this.getShaderFromVar(this.gl, colourFragShader, "Frag");
         var textureFragmentShader = this.getShaderFromVar(this.gl, textureFragShader, "Frag");
         var textureVertexShader = this.getShaderFromVar(this.gl, textureVertShader, "Vert");
         this.shaderProgram = this.createShader(this.shaderProgram, false, vertexShader, pointLightfragmentShader);
+        this.pointLightShaderProgram2 = this.createShader(this.shaderProgram, false, vertexShader, pointLightfragmentShader2);
         this.shaderProgram2 = this.createShader(this.shaderProgram2, false, vertexShader, colourFragmentShader);
         this.spotLightShaderProgram = this.createShader(this.spotLightShaderProgram, false, vertexShader, spotLightfragmentShader);
         this.textureShaderProgram = this.createShader(this.textureShaderProgram, true, textureVertexShader, textureFragmentShader);
@@ -344,11 +348,12 @@ function LightingEngine(canvas) {
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[array[i].bufferIndex]);
 
                 if(array[i].type == "point" || array[i].type == "spot") {
+                    // Unsure if this size of these vertices affects performance. Doesnt seem to.
                     vertices = [
-                        this.convertToMatrix(this.gl.viewportWidth, true), this.convertToMatrix(this.gl.viewportHeight,false),  0.0,
-                        this.convertToMatrix(-this.gl.viewportWidth, true), this.convertToMatrix(this.gl.viewportHeight, false),  0.0,
-                        this.convertToMatrix(this.gl.viewportWidth, true), this.convertToMatrix(-this.gl.viewportHeight, false),  0.0,
-                        this.convertToMatrix(-this.gl.viewportWidth, true), this.convertToMatrix(-this.gl.viewportHeight, false),  0.0
+                        this.convertToMatrix(this.gl.viewportWidth * 5, true), this.convertToMatrix(this.gl.viewportHeight * 5,false),  0.0,
+                        this.convertToMatrix(-this.gl.viewportWidth * 5, true), this.convertToMatrix(this.gl.viewportHeight * 5, false),  0.0,
+                        this.convertToMatrix(this.gl.viewportWidth * 5 , true), this.convertToMatrix(-this.gl.viewportHeight * 5, false),  0.0,
+                        this.convertToMatrix(-this.gl.viewportWidth * 5, true), this.convertToMatrix(-this.gl.viewportHeight * 5, false),  0.0
                     ];
 
                     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.DYNAMIC_DRAW);
@@ -424,24 +429,26 @@ function LightingEngine(canvas) {
         for(var l = 0; l < this.lights.length; l++) {
             if(this.lights[l].extendedLightMode == false) {
                 for(var f = 0; f < this.foreground.length; f++) {
-                    var nVert = this.foreground[f].shadowVertices.length;
-                    var vertX = [];
-                    var vertY = [];
-                    for(var i = 0; i < nVert; i++) {
-                        vertX.push(this.foreground[f].shadowVertices[i].x);
-                        vertY.push(this.foreground[f].shadowVertices[i].y);
+                    if(checkScreenBounds(this.xOffset, this.yOffset, this.gl.viewportWidth, this.gl.viewportHeight, 500, 500, this.foreground[f].x, this.foreground[f].y)) {
+                        var nVert = this.foreground[f].shadowVertices.length;
+                        var vertX = [];
+                        var vertY = [];
+                        for(var i = 0; i < nVert; i++) {
+                            vertX.push(this.foreground[f].shadowVertices[i].x);
+                            vertY.push(this.foreground[f].shadowVertices[i].y);
+                        }
+                        var testX = this.lights[l].location.x;
+                        var testY = this.lights[l].location.y;
+                        var num = polygonCollision(nVert, vertX, vertY, testX, testY);
+                        if(num == true) {
+                            this.lights[l].lightIsOnAPolygon = true;
+                            this.lights[l].polygonIndex = f;
+                            break;
+                        } else {
+                            this.lights[l].lightIsOnAPolygon = false;
+                            this.lights[l].polygonIndex = null;
+                        } 
                     }
-                    var testX = this.lights[l].location.x;
-                    var testY = this.lights[l].location.y;
-                    var num = polygonCollision(nVert, vertX, vertY, testX, testY);
-                    if(num == true) {
-                        this.lights[l].lightIsOnAPolygon = true;
-                        this.lights[l].polygonIndex = f;
-                        break;
-                    } else {
-                        this.lights[l].lightIsOnAPolygon = false;
-                        this.lights[l].polygonIndex = null;
-                    } 
                 }
             } else {
                 this.lights[l].lightIsOnAPolygon = false;  
@@ -450,14 +457,18 @@ function LightingEngine(canvas) {
 
 
         for(var f = 0; f < this.foreground.length; f++) {
-            if(this.foreground[f].rotationCalc == true) {
-                this.foreground[f].calculateRotation();
+            if(checkScreenBounds(this.xOffset, this.yOffset, this.gl.viewportWidth, this.gl.viewportHeight, 500, 500, this.foreground[f].x, this.foreground[f].y)) {
+                if(this.foreground[f].rotationCalc == true) {
+                    this.foreground[f].calculateRotation();
+                }
             }
         }
 
         for(var b = 0; b < this.background.length; b++) {
-            if(this.background[b].rotationCalc == true) {
-                this.background[b].calculateRotation();
+            if(checkScreenBounds(this.xOffset, this.yOffset, this.gl.viewportWidth, this.gl.viewportHeight, 500, 500, this.background[b].x, this.background[b].y)) {
+                if(this.background[b].rotationCalc == true) {
+                    this.background[b].calculateRotation();
+                }
             }
         }
 
@@ -466,20 +477,23 @@ function LightingEngine(canvas) {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         mat4.translate(this.mvMatrix, this.mvMatrix, [this.convertToMatrix(-this.xOffset, true), this.convertToMatrix(-this.yOffset, false), 0.0]); 
         for(var b = 0; b < this.background.length; b++) {
-            if(checkScreenBounds(this.xOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.yOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportWidth + (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportHeight + (this.background[b].faceSize * this.background[b].vertices.length), this.background[b].x, this.background[b].y)) {
+            if(checkScreenBounds(this.xOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.yOffset - (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportWidth + (this.background[b].faceSize * this.background[b].vertices.length), this.gl.viewportHeight + (this.background[b].faceSize * this.background[b].vertices.length), 500, 500, this.background[b].x, this.background[b].y)) {
                 this.renderObject(this.background, b);
             }
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
         for(var f = 0; f < this.foreground.length; f++) {
-            if(checkScreenBounds(this.xOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.yOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportWidth + (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportHeight + (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.foreground[f].x, this.foreground[f].y)) {
+            if(checkScreenBounds(this.xOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.yOffset - (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportWidth + (this.foreground[f].faceSize * this.foreground[f].vertices.length), this.gl.viewportHeight + (this.foreground[f].faceSize * this.foreground[f].vertices.length), 500, 500, this.foreground[f].x, this.foreground[f].y)) {
                 this.renderObject(this.foreground, f); 
             }
         }
         this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-
-        this.setCurrentShaderProgram(this.shaderProgram);
+        if(this.pointLightShaderSelected == true) {
+            this.setCurrentShaderProgram(this.shaderProgram);
+        } else {
+            this.setCurrentShaderProgram(this.pointLightShaderProgram2);
+        }
         this.gl.enable(this.gl.STENCIL_TEST);
         this.gl.depthMask(false);
         for(var l = 0; l < this.lights.length; l++) {  
@@ -491,122 +505,136 @@ function LightingEngine(canvas) {
             if(this.lights[l].polygonIndex != null) {
                 foreStart = this.lights[l].polygonIndex;
             }
-            for(var f = foreStart; f < this.foreground.length; f++) {
-                if(f > foreStart && this.lights[l].polygonIndex != null) {
-                    break;
-                }
-                if(this.foreground[f].dontRender == false) {
-                    var r1, r2, bb, cc, d;
-                    if(this.lights[l].type == "spot") {
-                        r1 = this.lights[l].radius;
-                        r2 = 1;
-                        bb = (this.lights[l].location.x) - (this.foreground[f].x + this.foreground[f].faceSize / 2);
-                        bb = bb * bb;
-                        cc = (this.lights[l].location.y) - (this.foreground[f].y + this.foreground[f].faceSize / 2);
-                        cc = cc * cc;
-                        d = Math.sqrt(bb + cc);
-                    } else {
-                        r1 = 1;
-                        r2 = 1;
-                        d = 1;
+            if(checkScreenBounds(this.xOffset, this.yOffset, this.gl.viewportWidth, this.gl.viewportHeight, 500, 500, this.lights[l].location.x, this.lights[l].location.y)) {
+                for(var f = foreStart; f < this.foreground.length; f++) {
+                    if(f > foreStart && this.lights[l].polygonIndex != null) {
+                        break;
                     }
+                    if(this.foreground[f].dontRender == false) {
+                        var r1, r2, bb, cc, d;
+                        if(this.lights[l].type == "spot") {
+                            r1 = this.lights[l].radius;
+                            r2 = 1;
+                            bb = (this.lights[l].location.x) - (this.foreground[f].x + this.foreground[f].faceSize / 2);
+                            bb = bb * bb;
+                            cc = (this.lights[l].location.y) - (this.foreground[f].y + this.foreground[f].faceSize / 2);
+                            cc = cc * cc;
+                            d = Math.sqrt(bb + cc);
+                        } else {
+                            r1 = 1;
+                            r2 = 1;
+                            d = 1;
+                        }
 
-                    if(r1 + r2 > d) {
-                        var vertices = this.foreground[f].getVertices();
-                        for(var v = 0; v < vertices.length; v++) {
-                            var currentVertex = vertices[v];
-                            var nextVertex = vertices[(v + 1) % vertices.length]; 
-                            var edge = Vector2f.sub(nextVertex, currentVertex);
-                            var normal = {
-                                x: edge.y,
-                                y: -edge.x
-                            }
-                            if(this.lights[l].extendedLightMode == false) {
-                                if(this.lights[l].lightIsOnAPolygon == true) {
-                                    // Inverting these can allow/stop block blending
-                                    normal.x = -edge.y;
-                                    normal.y = edge.x;
-                                } else {
-                                    // Inverting these can allow/stop block blending
-                                    normal.x = edge.y;
-                                    normal.y = -edge.x;
-                                }  
-                            }
+                        if(r1 + r2 > d) {
+                            var vertices = this.foreground[f].getVertices();
+                            for(var v = 0; v < vertices.length; v++) {
+                                var currentVertex = vertices[v];
+                                var nextVertex = vertices[(v + 1) % vertices.length]; 
+                                var edge = Vector2f.sub(nextVertex, currentVertex);
+                                var normal = {
+                                    x: edge.y,
+                                    y: -edge.x
+                                }
+                                if(this.lights[l].extendedLightMode == false) {
+                                    if(this.lights[l].lightIsOnAPolygon == true) {
+                                        // Inverting these can allow/stop block blending
+                                        normal.x = -edge.y;
+                                        normal.y = edge.x;
+                                    } else {
+                                        // Inverting these can allow/stop block blending
+                                        normal.x = edge.y;
+                                        normal.y = -edge.x;
+                                    }  
+                                }
 
-                            var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
-                            if(Vector2f.dot(normal, lightToCurrent) > 0) {
-                                var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
-                                var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
-                                // Unsure which one peforms better at this point in time
-/*                                 theVertices.push(
-                                    // Triangle 1
-                                    this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
-                                    this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
-                                    this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-                                    // Triangle 2
-                                    this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
-                                    this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
-                                    this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );*/
-                                theVertices.push(
-                                    // Triangle 1
-                                    point1.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point1.y / this.gl.viewportHeight * 2,  0.0,
-                                    currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
-                                    point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
-                                    // Triangle 2
-                                    currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
-                                    point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
-                                    nextVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, nextVertex.y / this.gl.viewportHeight * 2,  0.0   );
-                            }
-                        } 
+                                var lightToCurrent = Vector2f.sub(currentVertex, this.lights[l].location);
+                                if(Vector2f.dot(normal, lightToCurrent) > 0) {
+                                    var point1 = Vector2f.add(currentVertex, scale(500, Vector2f.sub(currentVertex, this.lights[l].location)));
+                                    var point2 = Vector2f.add(nextVertex, scale(500, Vector2f.sub(nextVertex, this.lights[l].location)));
+                                    // Unsure which one peforms better at this point in time
+    /*                                 theVertices.push(
+                                        // Triangle 1
+                                        this.convertToMatrix(point1.x, true), this.convertToMatrix(point1.y, false),  0.0,
+                                        this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
+                                        this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
+                                        // Triangle 2
+                                        this.convertToMatrix(currentVertex.x, true), this.convertToMatrix(currentVertex.y, false), 0.0,
+                                        this.convertToMatrix(point2.x, true), this.convertToMatrix(point2.y, false),  0.0,
+                                        this.convertToMatrix(nextVertex.x, true), this.convertToMatrix(nextVertex.y, false),  0.0   );*/
+                                    theVertices.push(
+                                        // Triangle 1
+                                        point1.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point1.y / this.gl.viewportHeight * 2,  0.0,
+                                        currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
+                                        point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
+                                        // Triangle 2
+                                        currentVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, currentVertex.y / this.gl.viewportHeight * 2, 0.0,
+                                        point2.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, point2.y / this.gl.viewportHeight * 2,  0.0,
+                                        nextVertex.x / this.gl.viewportWidth * this.gl.viewportRatio * 2, nextVertex.y / this.gl.viewportHeight * 2,  0.0   );
+                                }
+                            } 
+                        }
                     }
                 }
+
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
+
+                this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(theVertices), this.gl.DYNAMIC_DRAW);
+                this.shadowBuffers[0].itemSize = 3;
+                this.shadowBuffers[0].numItems = theVertices.length / 3;
+
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
+                this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowColourBuffers[0]);
+                this.gl.vertexAttribPointer(this.currentProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
+                this.setMatrixUniforms(this.currentProgram); 
+                this.gl.drawArrays(this.gl.TRIANGLES, 0, this.shadowBuffers[0].numItems);
             }
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
-
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(theVertices), this.gl.DYNAMIC_DRAW);
-            this.shadowBuffers[0].itemSize = 3;
-            this.shadowBuffers[0].numItems = theVertices.length / 3;
-
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowBuffers[0]);
-            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.shadowBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.shadowColourBuffers[0]);
-            this.gl.vertexAttribPointer(this.currentProgram.vertexColorAttribute, this.shadowColourBuffers[0].itemSize, this.gl.FLOAT, false, 0, 0);
-            this.setMatrixUniforms(this.currentProgram); 
-            this.gl.drawArrays(this.gl.TRIANGLES, 0, this.shadowBuffers[0].numItems);
-
             this.gl.colorMask(true, true, true, true);
-            this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
-            this.gl.stencilFunc(this.gl.EQUAL, 0, 1);
-            if(this.lights[l].type == "point" || this.lights[l].type == "directional") {
-                this.setCurrentShaderProgram(this.shaderProgram);
-            } else if(this.lights[l].type == "spot") {
-                this.setCurrentShaderProgram(this.spotLightShaderProgram);
-            } 
-            this.gl.enable(this.gl.BLEND);
-            this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
-            this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x - this.xOffset, this.lights[l].location.y - this.yOffset);
-            this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
-            if(this.lights[l].radius != null) {
-                this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+            if(checkScreenBounds(this.xOffset, this.yOffset, this.gl.viewportWidth, this.gl.viewportHeight, 500, 500, this.lights[l].location.x, this.lights[l].location.y)) {
+
+                this.gl.stencilOp(this.gl.KEEP, this.gl.KEEP, this.gl.KEEP);
+                this.gl.stencilFunc(this.gl.EQUAL, 0, 1);
+                if(this.lights[l].type == "point" || this.lights[l].type == "directional") {
+                    if(this.pointLightShaderSelected == true) {
+                        this.setCurrentShaderProgram(this.shaderProgram); 
+                    } else {
+                        this.setCurrentShaderProgram(this.pointLightShaderProgram2); 
+                    }
+                } else if(this.lights[l].type == "spot") {
+                    this.setCurrentShaderProgram(this.spotLightShaderProgram);
+                } 
+                this.gl.enable(this.gl.BLEND);
+                this.gl.blendFunc(this.gl.ONE, this.gl.ONE); 
+                this.gl.uniform2f(this.gl.getUniformLocation(this.currentProgram, "lightLocation"), this.lights[l].location.x - this.xOffset, this.lights[l].location.y - this.yOffset);
+                this.gl.uniform3f(this.gl.getUniformLocation(this.currentProgram, "lightColor"), this.lights[l].red / this.lights[l].intensity, this.lights[l].green / this.lights[l].intensity, this.lights[l].blue / this.lights[l].intensity);
+                if(this.lights[l].radius != null) {
+                    this.gl.uniform1f(this.gl.getUniformLocation(this.currentProgram, "radius"), this.lights[l].radius);
+                }
+                this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
+                this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
+                var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
+                mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
+                this.mvPushMatrix();
+                mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]); 
+                this.setMatrixUniforms(this.currentProgram);
+                this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
+                this.mvPopMatrix();
+                mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
+                this.gl.disable(this.gl.BLEND);
+                this.gl.clear(this.gl.STENCIL_BUFFER_BIT); 
             }
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.lightBuffers[this.lights[l].bufferIndex]);
-            this.gl.vertexAttribPointer(this.currentProgram.vertexPositionAttribute, this.lightBuffers[this.lights[l].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
-            var matrixPos = this.convertVertToMatrix(this.lights[l].location.x, this.lights[l].location.y);
-            mat4.translate(this.mvMatrix, this.mvMatrix, [matrixPos.x, matrixPos.y, 0.0]);
-            this.mvPushMatrix();
-            mat4.rotate(this.mvMatrix, this.mvMatrix, degToRad(this.lights[l].rotation), [0, 0, 1]); 
-            this.setMatrixUniforms(this.currentProgram);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.lightBuffers[this.lights[l].bufferIndex].numItems);
-            this.mvPopMatrix();
-            mat4.translate(this.mvMatrix, this.mvMatrix, [-matrixPos.x, -matrixPos.y, 0.0]);
-            this.gl.disable(this.gl.BLEND);
-            this.gl.clear(this.gl.STENCIL_BUFFER_BIT);       
+
         }
 
         if(this.foregroundBlending == true) {
             for(var l = 0; l < this.lights.length; l++) {
                 if(this.lights[l].type == "point" || this.lights[l].type == "directional") {
-                    this.setCurrentShaderProgram(this.shaderProgram);
+                    if(this.pointLightShaderSelected == true) {
+                        this.setCurrentShaderProgram(this.shaderProgram); 
+                    } else {
+                        this.setCurrentShaderProgram(this.pointLightShaderProgram2); 
+                    }
                 } else if(this.lights[l].type == "spot") {
                     this.setCurrentShaderProgram(this.spotLightShaderProgram);
                 } 
@@ -918,6 +946,9 @@ function LightingEngine(canvas) {
     this.logFps = function(logFPS) {
         this.logFPS = logFPS;
     },
+    this.togglePointLightShader = function(trueOrFalse) {
+        this.pointLightShaderSelected = trueOrFalse;
+    },
     this.convertToMatrix = function(value, isWidth) {
         this.convertCallsPerFrame++;
         if(isWidth == true) {
@@ -1053,9 +1084,9 @@ function polygonCollision(nVert, vertX, vertY, testX, testY) {
     return c;
 }
 
-function checkScreenBounds(boundX, boundY, boundWidth, boundHeight, testX, testY) {
-    if(testX >= boundX && testX <= boundX + boundWidth &&
-        testY >= boundY && testY <= boundY + boundHeight) {
+function checkScreenBounds(boundX, boundY, boundWidth, boundHeight, boundXAdditive, boundYAdditive, testX, testY) {
+    if(testX >= boundX - boundXAdditive && testX <= boundX + boundWidth + boundXAdditive &&
+        testY >= boundY - boundYAdditive && testY <= boundY + boundHeight + boundYAdditive) {
         return true;
     } else {
         return false;
