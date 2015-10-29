@@ -1,0 +1,22 @@
+{
+  "scripts": {
+    "build": "gulp",
+    "build-dev": "gulp dev"
+  },
+  "name": "LightingEngine",
+  "version": "0.2.0",
+  "private": "true",
+  "dependencies": {
+    "gl-matrix" : "^2.3.1"
+  },
+  "devDependencies": {
+    "del": "^2.0.2",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-uglify": "^1.4.2",
+    "gulp-add-src": "^0.2.0",
+    "gulp-header": "^1.7.1",
+    "node-fs": "^0.1.7",
+    "stats-js": "^1.0.0-alpha1"
+  }
+}
