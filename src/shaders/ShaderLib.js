@@ -1,5 +1,18 @@
+/**
+ * A static class that stores all the shaders in one place
+ *
+ * @class ShaderLib
+ * @static
+ */
 LE.ShaderLib = {
-	pointLightFragShader : 
+	/**
+	 * @private
+	 * @property POINT_LIGHT_FRAG
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	POINT_LIGHT_FRAG: 
 		"precision mediump float;" +
 		"uniform vec2 lightLocation;" +
 		"uniform vec3 lightColor;" +
@@ -9,8 +22,14 @@ LE.ShaderLib = {
 			"vec4 color = vec4(attenuation, attenuation, attenuation, pow(attenuation, 3.0)) * vec4(lightColor, 1);" +
 			"gl_FragColor = color;" +
 		"}",
-
-	pointLightFragShader2 :
+	/**
+	 * @private
+	 * @property POINT_LIGHT_FRAG2
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	POINT_LIGHT_FRAG2:
 		"precision mediump float;" +
 		"uniform vec2 lightLocation;" +
 		"uniform vec3 lightColor;" +
@@ -20,8 +39,14 @@ LE.ShaderLib = {
 			"vec4 color = vec4(attenuation, attenuation, attenuation, pow(attenuation, 3.0)) * vec4(lightColor, 1);" +
 			"gl_FragColor = color;" +
 		"}",
-
-	mainVertShader :
+	/**
+	 * @private
+	 * @property MAIN_VERT
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	MAIN_VERT:
 		"attribute vec3 aVertexPosition;" +
 		"attribute vec4 aVertexColor;" +
 		"uniform mat4 uMVMatrix;" +
@@ -31,8 +56,14 @@ LE.ShaderLib = {
 			"gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);" +
 			"vColor = aVertexColor;" +
 		"}",
-
-	radialPointLightFragShader : 
+	/**
+	 * @private
+	 * @property RADIAL_LIGHT_FRAG
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	RADIAL_LIGHT_FRAG: 
 		"precision mediump float;" +
 		"uniform vec2 lightLocation;" +
 		"uniform vec3 lightColor;" +
@@ -42,16 +73,28 @@ LE.ShaderLib = {
 	    	"float intensity = 1.0 - min( distance, radius ) / radius;" +
 	    	"gl_FragColor = vec4(intensity, intensity, intensity, 0.1) * vec4(lightColor.r / 10.0, lightColor.g / 10.0, lightColor.b / 10.0, 1);" +
 		"}",
-		
-	colourFragShader : 
+	/**
+	 * @private
+	 * @property COLOUR_FRAG
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	COLOUR_FRAG: 
 		"precision mediump float;" +
 		"uniform vec4 ambientLight;" +
 		"varying vec4 vColor;" +
 		"void main(void) {" +
 			"gl_FragColor = ambientLight * vColor;" +
 		"}",
-
-	textureFragShader :
+	/**
+	 * @private
+	 * @property TEXTURE_FRAG
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	TEXTURE_FRAG:
 		"precision mediump float;" +
 		"varying vec2 vTextureCoord;" +
 		"uniform vec4 ambientLight;" +
@@ -59,8 +102,14 @@ LE.ShaderLib = {
 		"void main(void) {" +
 			"gl_FragColor = ambientLight * texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));" +
 		"}",
-
-	textureVertShader : 
+	/**
+	 * @private
+	 * @property TEXTURE_VERT
+	 * @type String
+	 * @static
+	 * @final
+	 */
+	TEXTURE_VERT: 
 		"attribute vec3 aVertexPosition;" +
 	  	"attribute vec2 aTextureCoord;" +
 		"uniform mat4 uMVMatrix;" +

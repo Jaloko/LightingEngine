@@ -1,4 +1,15 @@
+/**
+ * The ColourSpectrum class is used to provide an array of HSV colours. The colours 
+ * are generated in a way that all the dark and unsaturated colours are left out.
+ *
+ * @class ColourSpectrum
+ * @constructor
+ */
 LE.ColourSpectrum = function() {
+    /**
+     * @property colours
+     * @type Array
+     */
     this.colours = [];
 
     // Constructor
@@ -21,11 +32,24 @@ LE.ColourSpectrum = function() {
         this.colours.push(new LE.Colour(r, g, b, 255));
     }
 
+    /**
+     * Returns a random colour from the HSV colour spectrum
+     *
+     * @method random
+     * @returns {LE.Colour} colour
+     */
     this.random = function() {
         return this.colours[Math.floor(Math.random() * this.colours.length)];
     },
+    /**
+     * Returns a colour based on the index given
+     *
+     * @method get
+     * @param {Number} index
+     * @returns {LE.Colour} colour
+     */
     this.get = function(index) {
-        if(index > this.colours.length) {
+        if(index > this.colours.length || index < 0) {
             console.error("Index exceeds colour range");
         } else {
             return this.colours[index];

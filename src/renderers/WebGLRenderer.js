@@ -1,3 +1,13 @@
+/**
+ * The WebGLRenderer class renders the Scene using a WebGL canvas context and a camera
+ *
+ * @class WebGLRenderer
+ * @constructor
+ * @param {Object} parameters Parameters is an object that contains the WebGLRenderers properties
+ * @param {DOMElement} parameters.canvas
+ * @param {LE.Scene} [parameters.scene=new LE.Scene()]
+ * @param {LE.OrthographicCamera} [parameters.camera=new LE.OrthographicCamera(0, 0)]
+ */
 LE.WebGLRenderer = function(parameters) {
     // Variable declarations
     if(parameters == null) {
@@ -5,7 +15,7 @@ LE.WebGLRenderer = function(parameters) {
     }
     this.gl,
     this.canvas = parameters.canvas,
-    this._scene = parameters.scene,
+    this._scene = parameters.scene || new LE.Scene(),
     this._camera = parameters.camera || new LE.OrthographicCamera(0, 0),
     this.shaders = new LE.Shaders();
 
@@ -46,8 +56,15 @@ LE.WebGLRenderer.prototype = {
     }
 };
 
+/**
+ * Intialises the WebGL context
+ *
+ * @method initGL
+ * @private
+ */
 LE.WebGLRenderer.prototype.initGL = function() {
     try {
+        // Experimental webgl so it can run in internet explorer and edge
         this.gl = this.canvas.getContext("experimental-webgl", {stencil:true});
         this.gl.viewportWidth = canvas.width;
         this.gl.viewportHeight = canvas.height;
@@ -63,15 +80,21 @@ LE.WebGLRenderer.prototype.initGL = function() {
     }
 };
 
+/**
+ * Intialises the shaders
+ *
+ * @method initShaders
+ * @private
+ */
 LE.WebGLRenderer.prototype.initShaders = function() {
     // Shader Parts
-    var pointLightfragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.pointLightFragShader, "Frag");
-    var pointLightfragmentShader2 = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.pointLightFragShader2, "Frag");
-    var vertexShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.mainVertShader, "Vert");
-    var radialPointLightfragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.radialPointLightFragShader, "Frag");
-    var colourFragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.colourFragShader, "Frag");
-    var textureFragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.textureFragShader, "Frag");
-    var textureVertexShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.textureVertShader, "Vert");
+    var pointLightfragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.POINT_LIGHT_FRAG, "Frag");
+    var pointLightfragmentShader2 = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.POINT_LIGHT_FRAG2, "Frag");
+    var vertexShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.MAIN_VERT, "Vert");
+    var radialPointLightfragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.RADIAL_LIGHT_FRAG, "Frag");
+    var colourFragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.COLOUR_FRAG, "Frag");
+    var textureFragmentShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.TEXTURE_FRAG, "Frag");
+    var textureVertexShader = this.shaders.getShaderFromVar(this.gl, LE.ShaderLib.TEXTURE_VERT, "Vert");
     // Create Shader Programs
     this.shaders.list.push(new LE.Shader('PrimaryPointLightShader', this.shaders.createShader(this.gl, false, vertexShader, pointLightfragmentShader)));
     this.shaders.list.push(new LE.Shader('SecondaryPointLightShader', this.shaders.createShader(this.gl, false, vertexShader, pointLightfragmentShader2)));
@@ -81,6 +104,12 @@ LE.WebGLRenderer.prototype.initShaders = function() {
     this.shaders.setCurrentShader(this.gl, this.shaders.list[0].program);
 };
 
+/**
+ * Prepares WebGL for rendering
+ *
+ * @method prepareGL
+ * @private
+ */
 LE.WebGLRenderer.prototype.prepareGL = function() {
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
@@ -93,23 +122,60 @@ LE.WebGLRenderer.prototype.prepareGL = function() {
     this.gl.enable(this.gl.STENCIL_TEST);
 };
 
+/**
+ * Sets projection and model view matrix uniforms
+ *
+ * @method setMatrixUniforms
+ * @param {Object} shaderProgram
+ * @private
+ */
 LE.WebGLRenderer.prototype.setMatrixUniforms = function(shaderProgram) {
     this.gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, this.camera.pMatrix);
     this.gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, this.camera.mvMatrix);
 };
 
+/**
+ * Sets the clear colour of the canvas
+ *
+ * @method setClearColour
+ * @param {Number} r Red of the colour
+ * @param {Number} g Green of the colour
+ * @param {Number} b Blue of the colour
+ * @param {Number} a Alpha of the colour
+ */
 LE.WebGLRenderer.prototype.setClearColour = function(r, g, b, a) {
     this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
 };
 
+/**
+ * Clears the canvas element
+ *
+ * @method clear
+ */
 LE.WebGLRenderer.prototype.clear = function() {
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 };
 
+/**
+ * Wraps on top of the camera translation function
+ *
+ * @method translate
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} rotation
+ * @private
+ */
 LE.WebGLRenderer.prototype.translate = function(x, y, rotation) {
     this.camera.translate(LE.Utilities.toMatrix(this.gl, x, true), LE.Utilities.toMatrix(this.gl, y, false), 0.0);
 };
 
+/**
+ * Resizes the canvas element and the WebGL viewport
+ *
+ * @method resize
+ * @param {Number} width Resize width
+ * @param {Number} height Resize height
+ */
 LE.WebGLRenderer.prototype.resize = function(width, height) {
     if(width != canvas.width || height != canvas.height) {
         canvas.width = width;
@@ -125,12 +191,23 @@ LE.WebGLRenderer.prototype.resize = function(width, height) {
     }
 };
 
+/**
+ * Renders the objects and lights in the scene to the canvas element
+ *
+ * @method render
+ */
 LE.WebGLRenderer.prototype.render = function() {
     this.renderObjects();
     this.renderShadowObjects();
     this.renderLightsAndShadows();
 };
 
+/**
+ * Renders the objects in the scene to the canvas element. This should not be called if the render function is being called. 
+ * This is simply here so each part of the scene can be rendered separately if needed
+ *
+ * @method renderObjects
+ */
 LE.WebGLRenderer.prototype.renderObjects = function() {
     this.translate(-this.camera.x, -this.camera.y);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
@@ -148,6 +225,12 @@ LE.WebGLRenderer.prototype.renderObjects = function() {
     this.translate(this.camera.x, this.camera.y);
 };
 
+/**
+ * Renders the shadow objects in the scene to the canvas element. This should not be called if the render function is being called. 
+ * This is simply here so each part of the scene can be rendered separately if needed
+ *
+ * @method renderShadowObjects
+ */
 LE.WebGLRenderer.prototype.renderShadowObjects = function() {
     this.translate(-this.camera.x, -this.camera.y);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
@@ -164,7 +247,13 @@ LE.WebGLRenderer.prototype.renderShadowObjects = function() {
     }
     this.translate(this.camera.x, this.camera.y);
 };
-    
+  
+/**
+ * Renders the lights and shadows in the scene to the canvas element. This should not be called if the render function is being called. 
+ * This is simply here so each part of the scene can be rendered separately if needed
+ *
+ * @method renderLightsAndShadows
+ */  
 LE.WebGLRenderer.prototype.renderLightsAndShadows = function() {
     this.translate(-this.camera.x, -this.camera.y);
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
@@ -225,27 +314,17 @@ LE.WebGLRenderer.prototype.renderLightsAndShadows = function() {
                     for(var v = 0; v < vertices.length; v++) {
                         var currentVertex = vertices[v];
                         var nextVertex = vertices[(v + 1) % vertices.length]; 
-                        var edge = LE.Vector2f.sub(nextVertex, currentVertex);
+                        var edge = LE.Vector2.sub(nextVertex, currentVertex);
                         var normal = {
+                            // Inverting these can allow/stop block blending
                             x: edge.y,
                             y: -edge.x
                         }
-                        if(this.scene.lights[l].extendedLightMode == false) {
-                            if(this.scene.lights[l].lightIsOnAPolygon == true) {
-                                // Inverting these can allow/stop block blending
-                                normal.x = -edge.y;
-                                normal.y = edge.x;
-                            } else {
-                                // Inverting these can allow/stop block blending
-                                normal.x = edge.y;
-                                normal.y = -edge.x;
-                            }  
-                        }
                         var lightLocation = {x: this.scene.lights[l].x, y: this.scene.lights[l].y};
-                        var lightToCurrent = LE.Vector2f.sub(currentVertex, lightLocation);
-                        if(LE.Vector2f.dot(normal, lightToCurrent) > 0) {
-                            var point1 = LE.Vector2f.add(currentVertex, LE.Vector2f.scale(500, LE.Vector2f.sub(currentVertex, lightLocation)));
-                            var point2 = LE.Vector2f.add(nextVertex, LE.Vector2f.scale(500, LE.Vector2f.sub(nextVertex, lightLocation)));
+                        var lightToCurrent = LE.Vector2.sub(currentVertex, lightLocation);
+                        if(LE.Vector2.dot(normal, lightToCurrent) > 0) {
+                            var point1 = LE.Vector2.add(currentVertex, LE.Vector2.scale(500, LE.Vector2.sub(currentVertex, lightLocation)));
+                            var point2 = LE.Vector2.add(nextVertex, LE.Vector2.scale(500, LE.Vector2.sub(nextVertex, lightLocation)));
                             // Manual vertToMatrix conversion. Because this is called thousands of times a function call slows it down.
                             theVertices.push(
                                 // Triangle 1
@@ -313,10 +392,19 @@ LE.WebGLRenderer.prototype.renderLightsAndShadows = function() {
     this.translate(this.camera.x, this.camera.y);
 };
 
+/**
+ * Renders a single texture object
+ *
+ * @method renderTextureObject
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.WebGLRenderer.prototype.renderTextureObject = function(array, i) {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.scene.objectBuffers[array[i].bufferIndex]);
     this.gl.vertexAttribPointer(this.shaders.selected.vertexPositionAttribute, this.scene.objectBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);
 
+    // Support transparent textures
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     this.gl.enable(this.gl.BLEND);
     this.shaders.setCurrentShader(this.gl, this.shaders.list[4].program);
@@ -343,6 +431,14 @@ LE.WebGLRenderer.prototype.renderTextureObject = function(array, i) {
     this.gl.disable(this.gl.BLEND);
 }
 
+/**
+ * Renders a single object
+ *
+ * @method renderObject
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.WebGLRenderer.prototype.renderObject = function(array, i) {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.scene.objectBuffers[array[i].bufferIndex]);
     this.gl.vertexAttribPointer(this.shaders.selected.vertexPositionAttribute, this.scene.objectBuffers[array[i].bufferIndex].itemSize, this.gl.FLOAT, false, 0, 0);

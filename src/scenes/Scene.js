@@ -1,3 +1,11 @@
+/**
+ * The Scene class contains the objects that are rendered with the WebGLRenderer
+ *
+ * @class Scene
+ * @constructor
+ * @param {Object} [parameters] Parameters is an object that contains the Scenes properties
+ * @param {LE.AmbientLight} [parameters.ambientLight=new LE.AmbientLight(new LE.Colour(255, 255, 255, 255))] Default value is an ambient light with maximum brightness.
+ */
 LE.Scene = function(parameters) {
     // Stop error if no parameters given
     if(parameters == null) {
@@ -8,6 +16,10 @@ LE.Scene = function(parameters) {
     this.lights = [],
     this.shadowObjects = [],
     this.objects = [],
+    /**
+     * @property ambientLight
+     * @type LE.AmbientLight
+     */
     this.ambientLight = parameters.ambientLight || new LE.AmbientLight(new LE.Colour(255, 255, 255, 255)),
     this.textures = [],
     // WebGL Buffers
@@ -19,12 +31,26 @@ LE.Scene = function(parameters) {
     this.shadowColourBuffers = [];
 };
 
+/**
+ * Initialise the scene with a WebGL context
+ *
+ * @method init
+ * @param {Object} gl
+ * @private
+ */
 LE.Scene.prototype.init = function(gl) {
     this.gl = gl
     this.initBuffers();
     this.initTextures();
 };
 
+/**
+ * Initialise all buffers, this includes object, texture and light buffers
+ *
+ * @method initBuffers
+ * @param {Object} gl
+ * @private
+ */
 LE.Scene.prototype.initBuffers = function(gl) {
     for(var so = 0; so < this.shadowObjects.length; so++) {
         if(this.shadowObjects[so] instanceof LE.Texture) {
@@ -61,6 +87,14 @@ LE.Scene.prototype.initBuffers = function(gl) {
     }
 };
 
+/**
+ * Initialise a texture buffer
+ *
+ * @method initTextureBuffer
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.Scene.prototype.initTextureBuffer = function(array, i) {
     var size = LE.Utilities.sizeFromVerts(array[i].renderVerts);
     for(var ii = i; ii >= 0; ii--) {
@@ -102,6 +136,14 @@ LE.Scene.prototype.initTextureBuffer = function(array, i) {
     }
 }
 
+/**
+ * Checks if a given polygon is equal to another polygon
+ *
+ * @method comparePolygons
+ * @param {Object} object1
+ * @param {Object} object2
+ * @private
+ */
 LE.Scene.prototype.comparePolygons = function(object1, object2) {
     if(object1 != object2) {
         if(object1.renderVerts.length == object2.renderVerts.length) {
@@ -131,6 +173,14 @@ LE.Scene.prototype.comparePolygons = function(object1, object2) {
     return false;
 };
 
+/**
+ * Initialise a polygon buffer
+ *
+ * @method initPolygonBuffer
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.Scene.prototype.initPolygonBuffer = function(array, i) {
     for(var ii = i; ii >= 0; ii--) {
         if(this.comparePolygons(array[i], array[ii])) {
@@ -172,6 +222,12 @@ LE.Scene.prototype.initPolygonBuffer = function(array, i) {
     }
 };
 
+/**
+ * Initialises all textures
+ *
+ * @method initTextures
+ * @private
+ */
 LE.Scene.prototype.initTextures = function() {
     for(var so = 0; so < this.shadowObjects.length; so++) {
         if(this.shadowObjects[so] instanceof LE.Texture) {
@@ -186,6 +242,14 @@ LE.Scene.prototype.initTextures = function() {
     }
 };
 
+/**
+ * Assigns a texture index to an object
+ *
+ * @method assignTextureIndices
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.Scene.prototype.assignTextureIndices = function(array, i) {
     var self = this;
     var createNew = true;
@@ -219,6 +283,13 @@ LE.Scene.prototype.assignTextureIndices = function(array, i) {
     }
 };
 
+/**
+ * Prepares the loaded texture for WebGL use
+ *
+ * @method handleLoadedTexture
+ * @param {Object} texture
+ * @private
+ */
 LE.Scene.prototype.handleLoadedTexture = function(texture) {
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -230,6 +301,14 @@ LE.Scene.prototype.handleLoadedTexture = function(texture) {
     texture.hasLoaded = true;
 };
 
+/**
+ * Initialise a light buffer
+ *
+ * @method initLightBuffer
+ * @param {Array} array
+ * @param {Number} i Index in the given array
+ * @private
+ */
 LE.Scene.prototype.initLightBuffer = function(array, i) {
     for(var ii = i; ii >= 0; ii--) {
         if(array[i] != array[ii] && array[i].type === array[ii].type) {
@@ -281,13 +360,12 @@ LE.Scene.prototype.initLightBuffer = function(array, i) {
     }
 };
 
-LE.Scene.prototype.setAmbientLight = function(object) {
-    if(object instanceof LE.AmbientLight) {
-        this.ambientLight = object;
-    }
-};
-
-
+/**
+ * Adds a LE.PointLight, LE.DirectionalLight or LE.RadialPointLight to the scene
+ *
+ * @method addLight
+ * @param {LE.pointLight, LE.DirectionalLight, LE.RadialPointLight} light
+ */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addLight = function(light) {
     if(light instanceof LE.PointLight || light instanceof LE.DirectionalLight || light instanceof LE.RadialPointLight) {
@@ -298,6 +376,12 @@ LE.Scene.prototype.addLight = function(light) {
     }
 };
 
+/**
+ * Adds a LE.Polygon or LE.Texture to the scene. This object will cast shadows
+ *
+ * @method addShadowObject
+ * @param {LE.Polygon, LE.Texture} object
+ */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addShadowObject = function(object) {
     if(object instanceof LE.Texture) {
@@ -314,6 +398,12 @@ LE.Scene.prototype.addShadowObject = function(object) {
     }
 };
 
+/**
+ * Adds a LE.Polygon or LE.Texture to the scene. This object will not cast shadows
+ *
+ * @method addObject
+ * @param {LE.Polygon, LE.Texture} object
+ */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addObject = function(object) {
     if(object instanceof LE.Texture) {
@@ -330,6 +420,12 @@ LE.Scene.prototype.addObject = function(object) {
     }
 };
 
+/**
+ * Removes a LE.PointLight, LE.DirectionalLight or LE.RadialPointLight from the scene
+ *
+ * @method removeLight
+ * @param {LE.pointLight, LE.DirectionalLight, LE.RadialPointLight} light
+ */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeLight = function(light) {
     if(light instanceof LE.PointLight || light instanceof LE.DirectionalLight || light instanceof LE.RadialPointLight) {
@@ -337,6 +433,12 @@ LE.Scene.prototype.removeLight = function(light) {
     }
 };
 
+/**
+ * Removes a LE.Polygon or LE.Texture from the scene. This object casts shadows
+ *
+ * @method removeShadowObject
+ * @param {LE.Polygon, LE.Texture} object
+ */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeShadowObject = function(object) {
     if(object instanceof LE.Texture || object instanceof LE.Polygon) {
@@ -344,6 +446,12 @@ LE.Scene.prototype.removeShadowObject = function(object) {
     }
 };
 
+/**
+ * Removes a LE.Polygon or LE.Texture from the scene. This object does not cast shadows
+ *
+ * @method removeObject
+ * @param {LE.Polygon, LE.Texture} object
+ */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeObject = function(object) {
     if(object instanceof LE.Texture || object instanceof LE.Polygon) {

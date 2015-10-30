@@ -80,7 +80,7 @@ function generatePolygons() {
     	} else if(rand == 1) {
     		generatePolygon(LE.Vertices.parallelogram((Math.random() * 60) + 15, (Math.random() * 60) + 15, (Math.random() * 70) + 10));
     	} else if(rand == 2 || rand == 3 || rand == 4) {
-    		generatePolygon(LE.Vertices.regularPolygon((Math.random() * 35) + 15, Math.floor(Math.random() * 17) + 3));
+    		generatePolygon(LE.Vertices.regularPolygon((Math.random() * 60) + 15, Math.floor(Math.random() * 17) + 3));
     	}
     }
 }
@@ -238,6 +238,10 @@ function attachEvents() {
 
     document.getElementById("help-box").addEventListener("mousedown", function() {
         alert("--Interactive Lights Demo Help--\n" +
+            "\n" +
+            "Left Click: \n" +
+            "To place a light\n" +
+            "\n" +
             "Press: \n" +
             "1 for point light\n" +
             "2 for directional light\n" +

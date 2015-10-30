@@ -15,8 +15,11 @@ var config = {
         "src/extras/Vertices.js",
         "src/extras/ColourSpectrum.js",
         "src/math/Utilities.js",
-        "src/math/Vector2f.js",
-        "src/lights/Lights.js",
+        "src/math/Vector2.js",
+        "src/lights/AmbientLight.js",
+        "src/lights/DirectionalLight.js",
+        "src/lights/PointLight.js",
+        "src/lights/RadialPointLight",
         "src/shaders/Shaders.js",
         "src/shaders/ShaderLib.js",
         "src/cameras/OrthographicCamera.js",
@@ -53,7 +56,7 @@ gulp.task('dev-build', ['clean'], function(){
 
 gulp.task('example-stats', function(){
     return addsrc('node_modules/stats-js/build/stats.min.js')
-    .pipe(gulp.dest('examples/js'));;
+    .pipe(gulp.dest('examples/js'));
 });
 
 gulp.task('default', config.tasks.default);

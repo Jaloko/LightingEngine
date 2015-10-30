@@ -1,18 +1,70 @@
+/**
+ * The Shader class is used internally to give shader programs an identifier (name)
+ * alongside the program itself
+ *
+ * @class Shader
+ * @constructor
+ * @param {String} name Name of the program
+ * @param {Object} program The program object
+ */
 LE.Shader = function(name, program) {
+    /**
+     * @private
+     * @property name
+     * @type String 
+     */
     this.name = name,
+    /**
+     * @private
+     * @property program
+     * @type Object 
+     */
     this.program = program
 }
 
+/**
+ * The Shaders class is used internally to tell the WebGLRender which shader is currently
+ * selected. It also stores a list of all the shaders being used.
+ *
+ * @class Shaders
+ * @constructor
+ */
 LE.Shaders = function() {
+    /**
+     * @private
+     * @property selected
+     * @type Object
+     */
     this.selected,
+    /**
+     * @private
+     * @property list
+     * @type Array
+     */
     this.list = []
 };
 
+/**
+ * Sets the selected property to the shader. Also tells WebGL to use this shader
+ *
+ * @private
+ * @method setCurrentShader
+ * @param {Object} gl
+ * @param {Object} shaderProgram
+ */
 LE.Shaders.prototype.setCurrentShader = function(gl, shaderProgram) {
     gl.useProgram(shaderProgram);
     this.selected = shaderProgram;
 };
 
+/**
+ * Loads a shader from an HTML script tag
+ *
+ * @private
+ * @method getShaderFromHTML
+ * @param {Object} gl
+ * @param {String} id
+ */
 LE.Shaders.prototype.getShaderFromHTML = function(gl, id) {
     var shaderScript = document.getElementById(id);
     if (!shaderScript) {
@@ -46,6 +98,15 @@ LE.Shaders.prototype.getShaderFromHTML = function(gl, id) {
     return shader;
 };
 
+/**
+ * Loads a shader from a JavaScript variable
+ *
+ * @private
+ * @method getShaderFromVar
+ * @param {Object} gl
+ * @param {String} shaderSrc
+ * @param {String} type
+ */
 LE.Shaders.prototype.getShaderFromVar = function(gl, shaderSrc, type) {
     var shader;
     if(type == "Vert" || type == "Vertex" || type == "VertexShader") {
@@ -65,7 +126,17 @@ LE.Shaders.prototype.getShaderFromVar = function(gl, shaderSrc, type) {
     }
     return shader;
 };
-    
+
+/**
+ * Creates a shader program from a vertex shader and a fragment shader
+ *
+ * @private
+ * @method createShader
+ * @param {Object} gl
+ * @param {Boolean} isTextureShader
+ * @param {String} vertexShader
+ * @param {String} fragmentShader
+ */    
 LE.Shaders.prototype.createShader = function(gl, isTextureShader, vertexShader, fragmentShader) {
     var shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -86,6 +157,15 @@ LE.Shaders.prototype.createShader = function(gl, isTextureShader, vertexShader, 
     return shaderProgram;
 };
 
+/**
+ * Enables a shader programs internal attributes. This allows WebGL to parse
+ * values to the shader program
+ *
+ * @private
+ * @method enableRegularShaderAttribs
+ * @param {Object} gl
+ * @param {Object} shaderProgram
+ */ 
 LE.Shaders.prototype.enableRegularShaderAttribs = function(gl, shaderProgram) {
     shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
@@ -93,6 +173,15 @@ LE.Shaders.prototype.enableRegularShaderAttribs = function(gl, shaderProgram) {
     gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 };
 
+/**
+ * Enables a texture shader programs internal attributes. This allows WebGL to parse
+ * values to the shader program
+ *
+ * @private
+ * @method enableTextureShaderAttribs
+ * @param {Object} gl
+ * @param {Object} shaderProgram
+ */ 
 LE.Shaders.prototype.enableTextureShaderAttribs = function(gl, shaderProgram) {
     shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
     gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);

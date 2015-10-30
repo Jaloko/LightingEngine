@@ -1,10 +1,53 @@
+/**
+ * The Texture class is used to render images to the scene. Shadows can be cast off a Texture, they are cast based on the vertices
+ *
+ * @class Texture
+ * @constructor
+ * @param {Number} x X position
+ * @param {Number} y Y position
+ * @param {Number} rotation Rotation from its center point
+ * @param {Object} vertices Vertices are used in determining the Texture width and height and also to cast shadows
+ * @param {String} textureURL the location of the image to be rendered
+ */
 LE.Texture = function(x, y, rotation, vertices, textureURL) {
+    /**
+     * @property x
+     * @type Number
+     */
     this.x = x,
+    /**
+     * @property y
+     * @type Number
+     */
     this.y = y,
+    /**
+     * @property rotation
+     * @type Number
+     */
     this._rotation = rotation,
+    /**
+     * @private
+     * @property vertices
+     * @type Object
+     */
     this.vertices = vertices.vertices,
+    /**
+     * @private
+     * @property renderVerts
+     * @type Object
+     */
     this.renderVerts = vertices.renderVerts,
+    /**
+     * @private
+     * @property centerPoint
+     * @type Object
+     */
     this.centerPoint = LE.Utilities.centerOfVerts(this.vertices),
+    /**
+     * @private
+     * @property textureURL
+     * @type String
+     */
     this.textureURL = textureURL;
 };
 

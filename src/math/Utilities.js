@@ -1,4 +1,20 @@
+/**
+ * A static class with functions for performing calculations
+ *
+ * @class Utilities
+ * @static
+ */
 LE.Utilities = {
+    /**
+     * Used to convert pixel positions to WebGL matrix positions
+     *
+     * @private
+     * @method toMatrix
+     * @param {Object} gl
+     * @param {Number} value
+     * @param {Boolean} isWidth
+     * @return {Number} newValue
+     */
     toMatrix : function(gl, value, isWidth) {
         if(isWidth == true) {
             return (value / gl.viewportWidth * gl.viewportRatio * 2);
@@ -6,9 +22,33 @@ LE.Utilities = {
             return (value / gl.viewportHeight * 2);
         }
     },
+    /**
+     * Used to convert pixel positions to WebGL matrix positions
+     *
+     * @private
+     * @method vertToMatrix
+     * @param {Object} gl
+     * @param {Number} x
+     * @param {Number} y
+     * @return {Object} newVector
+     */
     vertToMatrix : function(gl, x, y) {
         return verts = { x: x / gl.viewportWidth * gl.viewportRatio * 2, y: y / gl.viewportHeight * 2 };
     },
+    /**
+     * Checks if an x and y position is within the bounds provided as parameters
+     *
+     * @method checkScreenBounds
+     * @param {Number} boundX Camera x position
+     * @param {Number} boundY Camera y position
+     * @param {Number} boundWidth Viewport width
+     * @param {Number} boundHeight Viewport height
+     * @param {Number} boundXAdditive Extra amount to allow for on x boundaries
+     * @param {Number} boundYAdditive Extra amount to allow for on y boundaries
+     * @param {Number} testX The x position to test
+     * @param {Number} testY The y position to test
+     * @return {Boolean}
+     */
     checkScreenBounds : function(boundX, boundY, boundWidth, boundHeight, boundXAdditive, boundYAdditive, testX, testY) {
         if(testX >= boundX - boundXAdditive && testX <= boundX + boundWidth + boundXAdditive &&
             testY >= boundY - boundYAdditive && testY <= boundY + boundHeight + boundYAdditive) {
@@ -17,9 +57,24 @@ LE.Utilities = {
             return false;
         }
     },
+    /**
+     * Converts from degrees (angle) to radians
+     *
+     * @method degToRad
+     * @param {Number} degrees
+     * @return {Number} radian
+     */
     degToRad : function(degrees) {
         return degrees * Math.PI / 180;
     },
+    /**
+     * Returns the minimum width and height and maximum width and height from a set of vertices
+     *
+     * @private
+     * @method minMaxFromVerts
+     * @param {Object} vertcies
+     * @return {Object} minAndMax
+     */
     minMaxFromVerts : function(vertices) {
         var minWidth = 0, maxWidth = 0, minHeight = 0, maxHeight = 0;
         for(var i = 0; i < vertices.length; i++) {
@@ -35,10 +90,26 @@ LE.Utilities = {
         }  
         return { minWidth: minWidth, maxWidth: maxWidth, minHeight: minHeight, maxHeight: maxHeight };
     },
+    /**
+     * Returns the total width and height from a set of vertices
+     *
+     * @private
+     * @method sizeFromVerts
+     * @param {Object} vertcies
+     * @return {Object} widthAndHeight
+     */
     sizeFromVerts : function(vertices) {
         var v = this.minMaxFromVerts(vertices);
         return { width: Math.abs(v.maxWidth - v.minWidth), height: Math.abs(v.maxHeight - v.minHeight) };
     },
+    /**
+     * Returns a Vector container the center point from a set of vertices
+     *
+     * @private
+     * @method centerOfVerts
+     * @param {Object} vertcies
+     * @return {Object} xAndY
+     */
     centerOfVerts : function(vertices) {
         var x = 0;
         var y = 0;
@@ -50,6 +121,15 @@ LE.Utilities = {
         y = (y / vertices.length);
         return { x: x, y: y };
     },
+    /**
+     * Returns a Vector container the center point from a set of vertices
+     *
+     * @method checkPointCollision
+     * @param {Number} testX X position to be checked
+     * @param {Number} testY Y position to be checked
+     * @param {LE.Polygon, LE.Texture} object Object to be checked
+     * @return {Boolean} isColliding
+     */
     checkPointCollision : function(testX, testY, object) {
         // Inner function
         function polygonCollision(nVert, vertX, vertY, testX, testY) {
