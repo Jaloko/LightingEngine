@@ -1,25 +1,29 @@
 function pageLoad() {
 	resize();
 	var hash = window.location.hash.substring(1);
-	console.log(hash);
 	if(hash != "") {
-		var iframe = document.getElementById("iframe").src = hash + "/index.html";
-		changeExample(hash + "/index.html", hash);
+		var iframe = document.getElementById("iframe").src = hash + ".html";
+		changeExample(hash);
 	} else {
-		var iframe = document.getElementById("iframe").src = "random-polygons/index.html";
+		var selected = document.getElementsByClassName("selected");
+		var iframe = document.getElementById("iframe").src = selected[0].id + ".html";
 	}
 }
 
 function resize() {
     var content = document.getElementById("content");
-    content.style.width = window.innerWidth - 250 + "px";
+    content.style.width = window.innerWidth - 300 + "px";
 }
 
-function changeExample(url, element) {
-    var iframe = document.getElementById("iframe").src = url;
-    var examples = document.getElementsByClassName("content-cell");
+function changeExample(name) {
+    var iframe = document.getElementById("iframe").src = name + ".html";
+    var examples = document.getElementById("content-list").getElementsByTagName("a");
     for(var i = 0; i < examples.length; i++) {
-        examples[i].className = "content-cell";
+        examples[i].className = "";
     }
-    document.getElementById(element + "").className = "content-cell selected";
+    var ele = document.getElementById(name).className = "selected";
 }
+
+window.onresize = function(event) {
+	resize();
+};

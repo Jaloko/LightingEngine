@@ -5,36 +5,31 @@
 		<link rel="stylesheet" type="text/css" href="css/main.css"/>
 		<script type="text/javascript" src="js/index.js"></script>
 	</head>
-	<body onload="pageLoad();" onresize="resize();">
-		<div class="wrapper">
-			<div id="left-col">
-				<div class="title">
-					<h1>Lighting Engine Examples</h1>
-				</div>
-				<div id="content-list">
-					<div class="content-title">
-						<h2>Demos</h2>
-					</div>
-					<div id="random-polygons" class="content-cell selected" onclick="changeExample('random-polygons/index.html', 'random-polygons')">
-						<a href="#random-polygons">Random polygons</a>
-					</div>
-					<div id="rotating-bricks" class="content-cell" onclick="changeExample('rotating-bricks/index.html', 'rotating-bricks')">
-						<a href="#rotating-bricks">Rotating bricks</a>
-					</div>
-					<div class="content-title">
-						<h2>Games</h2>
-					</div>
-					<div id="crate-game" class="content-cell" onclick="changeExample('crate-game/index.html', 'crate-game')">
-						<a href="#crate-game">Crate game</a>
-					</div>
-				</div>
-				<div class="clear">
-				</div>
+	<body onload="pageLoad();">
+		<div id="menu">
+			<div class="title">
+				<h1>Lighting Engine Examples</h1>
 			</div>
-			<div id="content">
-				<iframe autofocus id="iframe" src="" width="100%" height="100%" frameborder="0" onload="this.contentWindow.focus()"></iframe>
+			<div id="content-list">
+				<div class="subtitle">
+					<h1>Demos</h1>
+				</div>
+				<ul>
+					<li><a id="interactive_lights" class="selected" href="#interactive_lights" onclick="changeExample('interactive_lights');">Interactive Lights</a></li>
+					<li><a id="rotating_rhombus" href="#rotating_rhombus" onclick="changeExample('rotating_rhombus');">Rotating Rhombus</a></li>
+				</ul>
+				<div class="subtitle">
+					<h1>Tests</h1>
+				</div>
+				<ul>
+					<li><a id="regular_polygon_test" href="#regular_polygon_test" onclick="changeExample('regular_polygon_test');">Regular Polygon</a></li>
+					<li><a id="regular_polygon_test_shadows" href="#regular_polygon_test_shadows" onclick="changeExample('regular_polygon_test_shadows');">Regular Polygon Shadows</a></li>
+					<li><a id="regular_polygon_texture_test" href="#regular_polygon_texture_test" onclick="changeExample('regular_polygon_texture_test');">Regular Polygon Textured</a></li>
+				</ul>
 			</div>
+		</div>
+		<div id="content">
+			<iframe autofocus id="iframe" src="" width="100%" height="100%" frameborder="0" onload="this.contentWindow.focus()"></iframe>
 		</div>
 	</body>
 </html>
-
