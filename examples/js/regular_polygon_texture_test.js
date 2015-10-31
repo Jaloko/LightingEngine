@@ -28,7 +28,7 @@ function init() {
 
 	// Add texture objects
     for(var i = 0; i < 13; i++) {
-    	var texture = new LE.Texture(50 + (i * 10 * (i / 2)), 250, 0, LE.Vertices.regularPolygon(10 * i, 20), "images/regular_polygon_texture_test.png");
+    	var texture = new LE.Texture( {x: 50 + (i * 10 * (i / 2)), y: 250, vertices: LE.Vertices.regularPolygon(10 * i, 20), textureURL: "images/regular_polygon_texture_test.png" } );
     	scene.addShadowObject(texture);
     }
 

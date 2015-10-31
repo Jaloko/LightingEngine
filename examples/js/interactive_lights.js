@@ -86,13 +86,12 @@ function generatePolygons() {
 }
 
 function generatePolygon(vertices) {
-	scene.addShadowObject(new LE.Polygon(
-		Math.random() * canvas.width, 
-		Math.random() * canvas.height, 
-		0, 
-		vertices,
-		new LE.Colour(0, 0, 0, 0)
-	));
+	scene.addShadowObject(new LE.Polygon( {
+		x: Math.random() * canvas.width, 
+		y: Math.random() * canvas.height, 
+		vertices: vertices,
+		colour: new LE.Colour(0, 0, 0, 0)
+	} ));
 }
 
 function updatePrimaryLight() {

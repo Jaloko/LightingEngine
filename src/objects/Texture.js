@@ -3,40 +3,53 @@
  *
  * @class Texture
  * @constructor
- * @param {Number} x X position
- * @param {Number} y Y position
- * @param {Number} rotation Rotation from its center point
- * @param {Object} vertices Vertices are used in determining the Texture width and height and also to cast shadows
- * @param {String} textureURL the location of the image to be rendered
+ * @param {Object} [parameters] Parameters is an object that contains the PointLights properties
+ * @param {Number} [parameters.x=0] X position
+ * @param {Number} [parameters.y=0] Y position
+ * @param {Number} [parameters.rotation=0] Rotation
+ * @param {Object} [parameters.vertices=LE.Vertices.square(50, 50).vertices] Vertices
+ * @param {Colour} parameters.textureURL Texture URL
  */
-LE.Texture = function(x, y, rotation, vertices, textureURL) {
+LE.Texture = function(parameters) {
+    // Stop error if no parameters given
+    if(parameters == null) {
+        console.error("The Texture class requires the textureURL parameter.");
+    }
+    if(parameters.vertices == null) {
+        parameters.vertices = { vertices: null, renderVerts: null };
+    }
     /**
      * @property x
-     * @type Number
+     * @type Number 
+     * @default 0
      */
-    this.x = x,
+    this.x = parameters.x || 0,
     /**
      * @property y
-     * @type Number
+     * @type Number 
+     * @default 0
      */
-    this.y = y,
+    this.y = parameters.y || 0,
     /**
      * @property rotation
      * @type Number
+     * @default 0
      */
-    this._rotation = rotation,
+    this._rotation = parameters.rotation || 0,
     /**
      * @private
      * @property vertices
      * @type Object
+     * @default LE.Vertices.square(50, 50).vertices
      */
-    this.vertices = vertices.vertices,
+    this.vertices = parameters.vertices.vertices || LE.Vertices.square(50, 50).vertices
     /**
      * @private
      * @property renderVerts
      * @type Object
+     * @default LE.Vertices.square(50, 50).renderVerts
      */
-    this.renderVerts = vertices.renderVerts,
+    this.renderVerts = parameters.vertices.renderVerts || LE.Vertices.square(50, 50).renderVerts
     /**
      * @private
      * @property centerPoint
@@ -48,7 +61,7 @@ LE.Texture = function(x, y, rotation, vertices, textureURL) {
      * @property textureURL
      * @type String
      */
-    this.textureURL = textureURL;
+    this.textureURL = parameters.textureURL;
 };
 
 LE.Texture.prototype = {

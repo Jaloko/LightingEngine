@@ -3,51 +3,66 @@
  *
  * @class Polygon
  * @constructor
- * @param {Number} x X position
- * @param {Number} y Y position
- * @param {Number} rotation Rotation from its center point
- * @param {Object} vertices Vertices are used in defining the Polygons shape and also to cast shadows
- * @param {Colour} colour The colour of the Polygon
+ * @param {Object} [parameters] Parameters is an object that contains the PointLights properties
+ * @param {Number} [parameters.x=0] X position
+ * @param {Number} [parameters.y=0] Y position
+ * @param {Number} [parameters.rotation=0] Rotation
+ * @param {Object} [parameters.vertices=LE.Vertices.regularPolygon(50, 3)] Vertices
+ * @param {Colour} [parameters.colour=new LE.Colour(255, 255, 255, 255)] Colour, default is white
  */
-LE.Polygon = function(x, y, rotation, vertices, colour) {
+LE.Polygon = function(parameters) {
+    // Stop error if no parameters given
+    if(parameters == null) {
+        parameters = { };
+    }
+    if(parameters.vertices == null) {
+        parameters.vertices = { vertices: null, renderVerts: null };
+    }
     /**
      * @property x
-     * @type Number
+     * @type Number 
+     * @default 0
      */
-    this.x = x,
+    this.x = parameters.x || 0,
     /**
      * @property y
-     * @type Number
+     * @type Number 
+     * @default 0
      */
-    this.y = y,
+    this.y = parameters.y || 0,
     /**
      * @property rotation
      * @type Number
+     * @default 0
      */
-    this._rotation = rotation,
+    this._rotation = parameters.rotation || 0,
     /**
      * @private
      * @property vertices
      * @type Object
+     * @default LE.Vertices.regularPolygon(50, 3).vertices
      */
-    this.vertices = vertices.vertices,
+    this.vertices = parameters.vertices.vertices || LE.Vertices.regularPolygon(50, 3).vertices,
     /**
      * @private
      * @property renderVerts
      * @type Object
+     * @default LE.Vertices.regularPolygon(50, 3).renderVerts
      */
-    this.renderVerts = vertices.renderVerts,
+    this.renderVerts = parameters.vertices.renderVerts || LE.Vertices.regularPolygon(50, 3).renderVerts,
     /**
      * @private
      * @property centerPoint
      * @type Object
+     * @default LE.Utilities.centerOfVerts(this.vertices)
      */
     this.centerPoint = LE.Utilities.centerOfVerts(this.vertices),
     /**
      * @property colour
      * @type LE.Colour
+     * @default new LE.Colour(255, 255, 255, 255)
      */
-    this.colour = colour
+    this.colour = parameters.colour || new LE.Colour(255, 255, 255, 255)
 };
 
 LE.Polygon.prototype = {

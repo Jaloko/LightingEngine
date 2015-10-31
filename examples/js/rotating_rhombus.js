@@ -27,7 +27,7 @@ function init() {
 	// Create Polygons
 	for(var y = 1; y <= 2; y++) {
 		for(var x = 0; x < 13; x++) {
-			objects.push(new LE.Polygon(75 * x, 200 * y, 0, LE.Vertices.rhombus(70, 80), new LE.Colour(0, 0, 0, 125)));
+			objects.push(new LE.Polygon( {x: 75 * x, y: 200 * y, vertices: LE.Vertices.rhombus(70, 80), colour: new LE.Colour(0, 0, 0, 125) } ));
 			scene.addShadowObject(objects[objects.length - 1]);
 		}
 	}

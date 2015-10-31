@@ -28,7 +28,7 @@ function init() {
 	var counter = 0;
 	for(var y = 0; y <= 3; y++) {
 		for(var x = 0; x < 9; x++) {
-			objects.push(new LE.Polygon(107 * x, 150 * y, 0, LE.Vertices.regularPolygon(100, counter + 3), new LE.Colour(0, 0, 0, 125)));
+			objects.push(new LE.Polygon( { x: 107 * x, y: 150 * y, vertices: LE.Vertices.regularPolygon(100, counter + 3), colour: new LE.Colour(0, 0, 0, 125) } ));
 			scene.addShadowObject(objects[objects.length - 1]);
 			counter++;
 		}
