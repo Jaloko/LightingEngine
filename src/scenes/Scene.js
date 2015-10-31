@@ -4,7 +4,7 @@
  * @class Scene
  * @constructor
  * @param {Object} [parameters] Parameters is an object that contains the Scenes properties
- * @param {LE.AmbientLight} [parameters.ambientLight=new LE.AmbientLight(new LE.Colour(255, 255, 255, 255))] Default value is an ambient light with maximum brightness.
+ * @param {AmbientLight} [parameters.ambientLight=new LE.AmbientLight(new LE.Colour(255, 255, 255, 255))] Default value is an ambient light with maximum brightness.
  */
 LE.Scene = function(parameters) {
     // Stop error if no parameters given
@@ -12,22 +12,103 @@ LE.Scene = function(parameters) {
         parameters = { };
     }
     // Variable declarations
+    /**
+     * Stores a reference to the WebGL canvas context
+     *
+     * @private
+     * @property gl
+     * @type Object
+     */
     this.gl,
+    /**
+     * Stores the lights
+     *
+     * @private
+     * @property lights
+     * @type Array
+     */
     this.lights = [],
+    /**
+     * Stores the objects that cast shadows
+     *
+     * @private
+     * @property shadowObjects
+     * @type Array
+     */
     this.shadowObjects = [],
+    /**
+     * Stores the objects that do not cast shadows
+     *
+     * @private
+     * @property objects
+     * @type Array
+     */
     this.objects = [],
     /**
+     * Stores the ambient light
+     *
      * @property ambientLight
-     * @type LE.AmbientLight
+     * @type AmbientLight
+     * @default new LE.AmbientLight(new LE.Colour(255, 255, 255, 255))
      */
     this.ambientLight = parameters.ambientLight || new LE.AmbientLight(new LE.Colour(255, 255, 255, 255)),
+    /**
+     * Stores all the texture data to be rendered by WebGL
+     *
+     * @private
+     * @property textures
+     * @type Array
+     */
     this.textures = [],
+
     // WebGL Buffers
+    /**
+     * Stores all the WebGL vertex buffers
+     *
+     * @private
+     * @property objectBuffers
+     * @type Array
+     */
     this.objectBuffers = [],
+    /**
+     * Stores all the WebGL colour vertex buffers
+     *
+     * @private
+     * @property objectColourBuffers 
+     * @type Array
+     */
     this.objectColourBuffers = [],
+    /**
+     * Stores all the WebGL texture vertex buffers
+     *
+     * @private
+     * @property objectTextureBuffers 
+     * @type Array
+     */
     this.objectTextureBuffers = [],
+    /**
+     * Stores all the WebGL light vertex buffers
+     *
+     * @private
+     * @property lightBuffers
+     * @type Array
+     */
     this.lightBuffers = [],
+    /**
+     * Stores all the WebGL shadow vertex buffers
+     *
+     * @private
+     * @property shadowBuffers 
+     * @type Array
+     */
     this.shadowBuffers = [],
+    /**
+     * Stores all the WebGL shadow colour vertex buffers
+     *
+     * @private
+     * @property shadowColourBuffers 
+     * @type Array
+     */
     this.shadowColourBuffers = [];
 };
 
@@ -361,10 +442,10 @@ LE.Scene.prototype.initLightBuffer = function(array, i) {
 };
 
 /**
- * Adds a LE.PointLight, LE.DirectionalLight or LE.RadialPointLight to the scene
+ * Adds a PointLight, DirectionalLight or RadialPointLight to the scene
  *
  * @method addLight
- * @param {LE.pointLight, LE.DirectionalLight, LE.RadialPointLight} light
+ * @param {Object} light
  */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addLight = function(light) {
@@ -377,10 +458,10 @@ LE.Scene.prototype.addLight = function(light) {
 };
 
 /**
- * Adds a LE.Polygon or LE.Texture to the scene. This object will cast shadows
+ * Adds a Polygon or Texture to the scene. This object will cast shadows
  *
  * @method addShadowObject
- * @param {LE.Polygon, LE.Texture} object
+ * @param {Object} object
  */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addShadowObject = function(object) {
@@ -399,10 +480,10 @@ LE.Scene.prototype.addShadowObject = function(object) {
 };
 
 /**
- * Adds a LE.Polygon or LE.Texture to the scene. This object will not cast shadows
+ * Adds a Polygon or Texture to the scene. This object will not cast shadows
  *
  * @method addObject
- * @param {LE.Polygon, LE.Texture} object
+ * @param {Object} object
  */
 // Merge into a single "add()" function in the future
 LE.Scene.prototype.addObject = function(object) {
@@ -421,10 +502,10 @@ LE.Scene.prototype.addObject = function(object) {
 };
 
 /**
- * Removes a LE.PointLight, LE.DirectionalLight or LE.RadialPointLight from the scene
+ * Removes a PointLight, DirectionalLight or RadialPointLight from the scene
  *
  * @method removeLight
- * @param {LE.pointLight, LE.DirectionalLight, LE.RadialPointLight} light
+ * @param {Object} light
  */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeLight = function(light) {
@@ -434,10 +515,10 @@ LE.Scene.prototype.removeLight = function(light) {
 };
 
 /**
- * Removes a LE.Polygon or LE.Texture from the scene. This object casts shadows
+ * Removes a Polygon or Texture from the scene. This object casts shadows
  *
  * @method removeShadowObject
- * @param {LE.Polygon, LE.Texture} object
+ * @param {Object} object
  */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeShadowObject = function(object) {
@@ -447,10 +528,10 @@ LE.Scene.prototype.removeShadowObject = function(object) {
 };
 
 /**
- * Removes a LE.Polygon or LE.Texture from the scene. This object does not cast shadows
+ * Removes a Polygon or Texture from the scene. This object does not cast shadows
  *
  * @method removeObject
- * @param {LE.Polygon, LE.Texture} object
+ * @param {Object} object
  */
 // Merge into a single "remove()" function in the future
 LE.Scene.prototype.removeObject = function(object) {

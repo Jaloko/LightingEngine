@@ -3,12 +3,12 @@
  *
  * @class AmbientLight
  * @constructor
- * @param {LE.Colour} colour Colour
+ * @param {Colour} colour Colour
  */
 LE.AmbientLight = function(colour) {
     /**
      * @property colour
-     * @type LE.Colour
+     * @type Colour
      */
     this.colour = colour
 };

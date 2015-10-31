@@ -3,10 +3,10 @@
  *
  * @class Colour
  * @constructor
- * @param {Number} r Red of the colour
- * @param {Number} g Green of the colour
- * @param {Number} b Blue of the colour
- * @param {Number} a Alpha of the colour
+ * @param {Number} r Red
+ * @param {Number} g Green
+ * @param {Number} b Blue
+ * @param {Number} a Alpha
  */
 LE.Colour = function(r, g, b, a) {
 	/**

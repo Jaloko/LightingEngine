@@ -127,7 +127,7 @@ LE.Utilities = {
      * @method checkPointCollision
      * @param {Number} testX X position to be checked
      * @param {Number} testY Y position to be checked
-     * @param {LE.Polygon, LE.Texture} object Object to be checked
+     * @param {Object} object Object to be checked. Takes a Polygon or a Texture
      * @return {Boolean} isColliding
      */
     checkPointCollision : function(testX, testY, object) {

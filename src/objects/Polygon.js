@@ -7,7 +7,7 @@
  * @param {Number} y Y position
  * @param {Number} rotation Rotation from its center point
  * @param {Object} vertices Vertices are used in defining the Polygons shape and also to cast shadows
- * @param {LE.Colour} colour The colour of the Polygon
+ * @param {Colour} colour The colour of the Polygon
  */
 LE.Polygon = function(x, y, rotation, vertices, colour) {
     /**

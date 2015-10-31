@@ -19,7 +19,7 @@ var config = {
         "src/lights/AmbientLight.js",
         "src/lights/DirectionalLight.js",
         "src/lights/PointLight.js",
-        "src/lights/RadialPointLight",
+        "src/lights/RadialPointLight.js",
         "src/shaders/Shaders.js",
         "src/shaders/ShaderLib.js",
         "src/cameras/OrthographicCamera.js",

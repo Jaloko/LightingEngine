@@ -5,7 +5,7 @@
     "build-docs": "yuidoc ./src"
   },
   "name": "LightingEngine",
-  "description": "A 2D lighting and shadows engine using WebGL and Javascript",
+  "description": "A 2D lighting and shadows engine using WebGL and JavaScript",
   "version": "0.2.0",
   "private": "true",
   "dependencies": {
@@ -20,5 +20,14 @@
     "gulp-header": "^1.7.1",
     "node-fs": "^0.1.7",
     "stats-js": "^1.0.0-alpha1"
+  },
+  "yuidoc": {
+    "name": "Lighting Engine API Documentation",
+    "description": "A 2D lighting and shadows engine using WebGL and JavaScript",
+    "version": "0.2.0",
+    "options": {
+      "paths": "./src/*.js",
+      "outdir": "./docs"
+    }
   }
 }

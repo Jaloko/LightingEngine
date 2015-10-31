@@ -9,7 +9,7 @@
  * @param {Number} [parameters.y=0] Y position
  * @param {Number} [parameters.rotation=0] Rotation of the light
  * @param {Number} [parameters.range=0] The range of the light in degrees (angle)
- * @param {LE.Colour} [parameters.colour=new LE.Colour(255, 255, 255, 255)] Colour, default is white
+ * @param {Colour} [parameters.colour=new LE.Colour(255, 255, 255, 255)] Colour, default is white
  * @param {Number} [parameters.intensity=0.1] Light intensity/brightness
  * @param {Number} [parameters.shader=LE.LightShaders.POINT_LIGHT] Index of the shader used during rendering
  */
@@ -28,36 +28,43 @@ LE.DirectionalLight = function(parameters) {
     /**
      * @property x
      * @type Number 
+     * @default 0
      */
     this.x = parameters.x || 0,
     /**
      * @property y
      * @type Number 
+     * @default 0
      */
     this.y = parameters.y || 0,
     /**
      * @property rotation
-     * @type Number 
+     * @type Number
+     * @default 0 
      */
     this.rotation = parameters.rotation || 0,
     /**
      * @property range
      * @type Number 
+     * @default 90 
      */
     this.range = parameters.range || 90,
     /**
      * @property colour
-     * @type LE.Colour 
+     * @type Colour
+     * @default new LE.Colour(255, 255, 255, 255  
      */
     this.colour = parameters.colour || new LE.Colour(255, 255, 255, 255),
     /**
      * @property intensity
      * @type Number 
+     * @default 0.1 
      */
     this.intensity = parameters.intensity || 0.1,
     /**
      * @property shader
      * @type Number 
+     * @default LE.LightShaders.POINT_LIGHT 
      */
     this.shader = parameters.shader || LE.LightShaders.POINT_LIGHT
     if(this.intensity > 1.0 || this.intensity < 0.0) {

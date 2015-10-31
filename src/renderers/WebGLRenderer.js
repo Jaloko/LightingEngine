@@ -9,14 +9,50 @@
  * @param {LE.OrthographicCamera} [parameters.camera=new LE.OrthographicCamera(0, 0)]
  */
 LE.WebGLRenderer = function(parameters) {
-    // Variable declarations
     if(parameters == null) {
         console.error("To create a WebGLRenderer a canvas needs to be provided.")
     }
+    // Variable declarations
+    /**
+     * Stores the WebGL canvas context
+     *
+     * @private
+     * @property gl
+     * @type Object
+     */
     this.gl,
+    /**
+     * Stores the canvas element
+     *
+     * @private
+     * @property canvas
+     * @type Object
+     */
     this.canvas = parameters.canvas,
+    /**
+     * Stores the Scene. This is interchangeable with any Scene during runtime
+     *
+     * @property scene
+     * @type Scene
+     * @default new LE.Scene()
+     */
     this._scene = parameters.scene || new LE.Scene(),
+    /**
+     * Stores the Camera. This is interchangeable with any Camera during runtime
+     *
+     * @property camera
+     * @type Camera
+     * @default new LE.OrthographicCamera(0, 0)
+     */
     this._camera = parameters.camera || new LE.OrthographicCamera(0, 0),
+    /**
+     * Stores the shaders
+     *
+     * @private
+     * @property shaders
+     * @type Shaders
+     * @default new LE.Shaders()
+     */
     this.shaders = new LE.Shaders();
 
     // Constructor
@@ -138,10 +174,10 @@ LE.WebGLRenderer.prototype.setMatrixUniforms = function(shaderProgram) {
  * Sets the clear colour of the canvas
  *
  * @method setClearColour
- * @param {Number} r Red of the colour
- * @param {Number} g Green of the colour
- * @param {Number} b Blue of the colour
- * @param {Number} a Alpha of the colour
+ * @param {Number} r Red
+ * @param {Number} g Green
+ * @param {Number} b Blue
+ * @param {Number} a Alpha
  */
 LE.WebGLRenderer.prototype.setClearColour = function(r, g, b, a) {
     this.gl.clearColor(r / 255, g / 255, b / 255, a / 255);
