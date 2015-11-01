@@ -9,12 +9,12 @@
  * @param {Number} a Alpha
  */
 LE.Colour = function(r, g, b, a) {
-	/**
+    /**
      * @property r
      * @type Number
      */
     this.r = r,
-   	/**
+    /**
      * @property g
      * @type Number
      */

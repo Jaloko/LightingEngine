@@ -13,7 +13,7 @@ A getting started guide can be found on the [wiki](https://github.com/Jaloko/Lig
 ## Documentation
 The API is fully documented and can be found [here](http://corybeams.com/le/docs/).
 
-A guide to building the latest documentation from the source is on the [wiki](https://github.com/Jaloko/LightingEngine/wiki/).
+A guide to building the latest documentation from the source is on the [wiki](https://github.com/Jaloko/LightingEngine/wiki/Building-the-documentation).
 
 ## Building
 The lighting engine uses [Gulp](http://gulpjs.com/) to combine and minify JavaScript code into a single file.

@@ -8,7 +8,7 @@
  * @param {Number} [parameters.y=0] Y position
  * @param {Number} [parameters.rotation=0] Rotation
  * @param {Object} [parameters.vertices=LE.Vertices.square(50, 50).vertices] Vertices
- * @param {Colour} parameters.textureURL Texture URL
+ * @param {String} parameters.textureURL Texture URL
  */
 LE.Texture = function(parameters) {
     // Stop error if no parameters given

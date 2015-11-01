@@ -93,7 +93,7 @@ LE.WebGLRenderer.prototype = {
 };
 
 /**
- * Intialises the WebGL context
+ * Initialises the WebGL context
  *
  * @method initGL
  * @private
@@ -117,7 +117,7 @@ LE.WebGLRenderer.prototype.initGL = function() {
 };
 
 /**
- * Intialises the shaders
+ * Initialises the shaders
  *
  * @method initShaders
  * @private

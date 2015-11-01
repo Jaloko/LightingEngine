@@ -1,5 +1,5 @@
 /**
- * The Orthographic Camera class allows the WebGLRenderer to render objects in 
+ * The OrthographicCamera class allows the WebGLRenderer to render objects in 
  * different coordinates of the scene.
  *
  * @class OrthographicCamera
