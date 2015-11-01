@@ -15,9 +15,6 @@ LE.Polygon = function(parameters) {
     if(parameters == null) {
         parameters = { };
     }
-    if(parameters.vertices == null) {
-        parameters.vertices = { vertices: null, renderVerts: null };
-    }
     /**
      * @property x
      * @type Number 
@@ -40,16 +37,9 @@ LE.Polygon = function(parameters) {
      * @private
      * @property vertices
      * @type Object
-     * @default LE.Vertices.regularPolygon(50, 3).vertices
+     * @default LE.Vertices.regularPolygon(50, 3)
      */
-    this.vertices = parameters.vertices.vertices || LE.Vertices.regularPolygon(50, 3).vertices,
-    /**
-     * @private
-     * @property renderVerts
-     * @type Object
-     * @default LE.Vertices.regularPolygon(50, 3).renderVerts
-     */
-    this.renderVerts = parameters.vertices.renderVerts || LE.Vertices.regularPolygon(50, 3).renderVerts,
+    this.vertices = parameters.vertices || LE.Vertices.regularPolygon(50, 3),
     /**
      * @private
      * @property centerPoint

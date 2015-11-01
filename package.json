@@ -9,7 +9,8 @@
   "version": "0.2.0",
   "private": "true",
   "dependencies": {
-    "gl-matrix" : "^2.3.1"
+    "gl-matrix": "^2.3.1",
+    "earcut": "^2.0.6"
   },
   "devDependencies": {
     "del": "^2.0.2",
@@ -19,7 +20,10 @@
     "gulp-add-src": "^0.2.0",
     "gulp-header": "^1.7.1",
     "node-fs": "^0.1.7",
-    "stats-js": "^1.0.0-alpha1"
+    "stats-js": "^1.0.0-alpha1",
+    "browserify": "12.0.1",
+    "vinyl-source-stream": "1.1.0",
+    "vinyl-buffer": "1.0.0"
   },
   "yuidoc": {
     "name": "Lighting Engine API Documentation",

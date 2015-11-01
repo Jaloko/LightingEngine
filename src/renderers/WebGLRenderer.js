@@ -335,14 +335,6 @@ LE.WebGLRenderer.prototype.renderLightsAndShadows = function() {
                     // and rotations.
                     var vertices = [];
                     for(var i = 0; i < this.scene.shadowObjects[so].vertices.length; i++) {
-                        // Skipping every third vertex because they are not needed to build the shadows.
-                        // Also only doing this for shapes with more than 4 vertices because triangles and rectangles
-                        // render fine
-                        if(this.scene.shadowObjects[so].vertices.length > 4) {
-                            if(i % 4 == 1) {
-                                continue;
-                            }
-                        }
                         vertices.push({x: this.scene.shadowObjects[so].vertices[i].x + this.scene.shadowObjects[so].x,
                                        y: this.scene.shadowObjects[so].vertices[i].y + this.scene.shadowObjects[so].y});
                     }
@@ -492,9 +484,11 @@ LE.WebGLRenderer.prototype.renderObject = function(array, i) {
     this.camera.translate(cp.x, cp.y, 0.0);
     this.camera.rotate(LE.Utilities.degToRad(array[i].rotation), 0, 0, 1);
     this.camera.translate(-cp.x, -cp.y, 0.0);
-    this.setMatrixUniforms(this.shaders.selected);  
 
-    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.scene.objectBuffers[array[i].bufferIndex].numItems);
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.scene.objectIndexBuffers[array[i].bufferIndex]);
+    this.setMatrixUniforms(this.shaders.selected);  
+    this.gl.drawElements(this.gl.TRIANGLES, this.scene.objectIndexBuffers[array[i].bufferIndex].numItems, this.gl.UNSIGNED_SHORT, 0);
+
     this.camera.mvPopMatrix();
     this.camera.translate(-matrixPos.x, -matrixPos.y, 0.0);
     this.gl.disable(this.gl.BLEND);

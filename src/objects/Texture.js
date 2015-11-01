@@ -7,16 +7,13 @@
  * @param {Number} [parameters.x=0] X position
  * @param {Number} [parameters.y=0] Y position
  * @param {Number} [parameters.rotation=0] Rotation
- * @param {Object} [parameters.vertices=LE.Vertices.square(50, 50).vertices] Vertices
+ * @param {Object} [parameters.vertices=LE.Vertices.square(50, 50)] Vertices
  * @param {String} parameters.textureURL Texture URL
  */
 LE.Texture = function(parameters) {
     // Stop error if no parameters given
     if(parameters == null) {
         console.error("The Texture class requires the textureURL parameter.");
-    }
-    if(parameters.vertices == null) {
-        parameters.vertices = { vertices: null, renderVerts: null };
     }
     /**
      * @property x
@@ -40,16 +37,9 @@ LE.Texture = function(parameters) {
      * @private
      * @property vertices
      * @type Object
-     * @default LE.Vertices.square(50, 50).vertices
+     * @default LE.Vertices.square(50, 50)
      */
-    this.vertices = parameters.vertices.vertices || LE.Vertices.square(50, 50).vertices
-    /**
-     * @private
-     * @property renderVerts
-     * @type Object
-     * @default LE.Vertices.square(50, 50).renderVerts
-     */
-    this.renderVerts = parameters.vertices.renderVerts || LE.Vertices.square(50, 50).renderVerts
+    this.vertices = parameters.vertices || LE.Vertices.square(50, 50)
     /**
      * @private
      * @property centerPoint

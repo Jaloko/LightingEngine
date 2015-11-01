@@ -21,8 +21,7 @@ LE.Vertices = {
             {x: faceSize, y: faceSize},
             {x: faceSize, y: 0}
         ];
-        var renderVerts = JSON.parse(JSON.stringify(vertices));
-        return { vertices: vertices, renderVerts: renderVerts };
+        return vertices;
     },
     /**
      * Creates and returns the vertices for a rectangle
@@ -40,8 +39,7 @@ LE.Vertices = {
             {x: width, y: height},
             {x: width, y: 0}
         ];
-        var renderVerts = JSON.parse(JSON.stringify(vertices));
-        return { vertices: vertices, renderVerts: renderVerts };
+        return vertices;
     },
     /**
      * Creates and returns the vertices for a rhombus
@@ -57,8 +55,7 @@ LE.Vertices = {
         vertices.push({x: Math.sin(LE.Utilities.degToRad(angle)) * faceSize, y: Math.cos(LE.Utilities.degToRad(angle)) * faceSize });
         vertices.push({x: vertices[1].x + faceSize, y: vertices[1].y});
         vertices.push({x: vertices[0].x + faceSize, y: vertices[0].y});
-        var renderVerts = JSON.parse(JSON.stringify(vertices));
-        return { vertices: vertices, renderVerts: renderVerts };
+        return vertices;
     },
     /**
      * Creates and returns the vertices for a parallelogram
@@ -75,8 +72,7 @@ LE.Vertices = {
         vertices.push({x: Math.sin(LE.Utilities.degToRad(angle)) * width, y: Math.cos(LE.Utilities.degToRad(angle)) * height });
         vertices.push({x: vertices[1].x + width, y: vertices[1].y});
         vertices.push({x: vertices[0].x + width, y: vertices[0].y});
-        var renderVerts = JSON.parse(JSON.stringify(vertices));
-        return { vertices: vertices, renderVerts: renderVerts };
+        return vertices;
     },
     /**
      * Creates and returns the vertices for a trapezium - TO DO
@@ -122,29 +118,11 @@ LE.Vertices = {
             console.error("A regular polygon cannot have less than 3 vertices.")
         }
         var vertices = [];
-        var renderVerts = [];
         // Half faceSize because it starts of the center of the polygon. We want the faceSize to be
         // the entire width/height
         for(var i = 0; i < numberOfVertices; i++) {
             vertices.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize / 2), 
                 y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize / 2)} );
-            renderVerts.push( { x: (Math.sin(i/numberOfVertices*2*Math.PI) * faceSize / 2), 
-                y: (Math.cos(i/numberOfVertices*2*Math.PI) * faceSize / 2)} );
-            // Required because using WebGL TRIANGLE_STRIP render function
-            // Needed for both shadows and shape render
-            if(numberOfVertices > 4) {
-                if(i % 3 == 0) {
-                    vertices.push( { x: 0, y: 0 } );
-                    renderVerts.push( { x: 0, y: 0 } );
-                }  
-            }
-        }
-
-        // This should work for all vertex lengths now
-        if(vertices.length >= 7) {
-            if(vertices.length % 4 == 0) {
-                renderVerts.push( { x: 0, y: 0 } );
-            }
         }
 
         var size = LE.Utilities.sizeFromVerts(vertices);
@@ -152,10 +130,6 @@ LE.Vertices = {
             vertices[i].x += size.width / 2;
             vertices[i].y += size.height / 2;
         }
-        for(var i = 0; i < renderVerts.length; i++) {
-            renderVerts[i].x += size.width / 2;
-            renderVerts[i].y += size.height / 2;
-        }
-        return { vertices: vertices, renderVerts: renderVerts };
+        return vertices;
     }
 }

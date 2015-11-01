@@ -78,6 +78,14 @@ LE.Scene = function(parameters) {
      * @type Array
      */
     this.objectColourBuffers = [],
+     /**
+     * Stores all the WebGL object indices
+     *
+     * @private
+     * @property objectIndexBuffers 
+     * @type Array
+     */
+    this.objectIndexBuffers = [],
     /**
      * Stores all the WebGL texture vertex buffers
      *
@@ -177,10 +185,10 @@ LE.Scene.prototype.initBuffers = function(gl) {
  * @private
  */
 LE.Scene.prototype.initTextureBuffer = function(array, i) {
-    var size = LE.Utilities.sizeFromVerts(array[i].renderVerts);
+    var size = LE.Utilities.sizeFromVerts(array[i].vertices);
     for(var ii = i; ii >= 0; ii--) {
-        var iiSize = LE.Utilities.sizeFromVerts(array[ii].renderVerts);
-        if(array[i] != array[ii]  && array[i].renderVerts.length == array[ii].renderVerts.length
+        var iiSize = LE.Utilities.sizeFromVerts(array[ii].vertices);
+        if(array[i] != array[ii]  && array[i].vertices.length == array[ii].vertices.length
             && size.width == iiSize.width && size.height == iiSize.height) {
             array[i].bufferIndex = array[ii].bufferIndex;
         } else if(ii == 0) {
@@ -189,18 +197,29 @@ LE.Scene.prototype.initTextureBuffer = function(array, i) {
             this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[array[i].bufferIndex]);
 
-            var renderVerts = [];
+            var vertices = [];
 
-            renderVerts = [
+            vertices = [
                 LE.Utilities.toMatrix(this.gl, size.width, true), LE.Utilities.toMatrix(this.gl, size.height, false),  0.0,
                 0,  LE.Utilities.toMatrix(this.gl, size.height, false),  0.0,
                 LE.Utilities.toMatrix(this.gl, size.width, true), 0,  0.0,
                 0, 0,  0.0,
             ];
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(renderVerts), this.gl.STATIC_DRAW);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
 
             this.objectBuffers[array[i].bufferIndex].itemSize = 3;
-            this.objectBuffers[array[i].bufferIndex].numItems = renderVerts.length / 3;  
+            this.objectBuffers[array[i].bufferIndex].numItems = vertices.length / 3;
+
+            // These are just pushed to the array to fill the gap because the bufferIndex variable is shared across arrays
+            // These are not actually used while rendering textures
+            // Indices
+            this.objectIndexBuffers[this.objectIndexBuffers.length] = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.objectIndexBuffers[array[i].bufferIndex]);
+            var vertIndices = earcut(vertices, null, 3);
+            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vertIndices), this.gl.STATIC_DRAW);
+            this.objectIndexBuffers[array[i].bufferIndex].itemSize = 1;
+            this.objectIndexBuffers[array[i].bufferIndex].numItems = vertIndices.length;
+            // End  
 
             this.objectTextureBuffers[array[i].bufferIndex] = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectTextureBuffers[array[i].bufferIndex]);
@@ -227,10 +246,10 @@ LE.Scene.prototype.initTextureBuffer = function(array, i) {
  */
 LE.Scene.prototype.comparePolygons = function(object1, object2) {
     if(object1 != object2) {
-        if(object1.renderVerts.length == object2.renderVerts.length) {
-            for(var v = 0; v < object1.renderVerts.length; v++) {
-                if(object1.renderVerts[v].x != object2.renderVerts[v].x ||
-                   object1.renderVerts[v].y != object2.renderVerts[v].y) {
+        if(object1.vertices.length == object2.vertices.length) {
+            for(var v = 0; v < object1.vertices.length; v++) {
+                if(object1.vertices[v].x != object2.vertices[v].x ||
+                   object1.vertices[v].y != object2.vertices[v].y) {
                     // If the individual verts arent the same exit
                     return false;
                 }
@@ -270,35 +289,41 @@ LE.Scene.prototype.initPolygonBuffer = function(array, i) {
         } else if(ii == 0) {
             array[i].bufferIndex = this.objectBuffers.length;
 
+            // Vertices
             this.objectBuffers[this.objectBuffers.length] = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectBuffers[array[i].bufferIndex]);
-
-            var renderVerts = [];
-
-            for(var v = 0; v < array[i].renderVerts.length; v++) {
-                renderVerts.push(LE.Utilities.toMatrix(this.gl, array[i].renderVerts[v].x, true), 
-                    LE.Utilities.toMatrix(this.gl, array[i].renderVerts[v].y, false),
+            var vertices = [];
+            for(var v = 0; v < array[i].vertices.length; v++) {
+                vertices.push(LE.Utilities.toMatrix(this.gl, array[i].vertices[v].x, true), 
+                    LE.Utilities.toMatrix(this.gl, array[i].vertices[v].y, false),
                     0.0);
             }
-            
-            // This shouldnt be here
-            renderVerts.push(LE.Utilities.toMatrix(this.gl, array[i].renderVerts[0].x, true));
-            renderVerts.push(LE.Utilities.toMatrix(this.gl, array[i].renderVerts[0].y, false));
-            renderVerts.push(0.0); 
-            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(renderVerts), this.gl.STATIC_DRAW);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
 
             this.objectBuffers[array[i].bufferIndex].itemSize = 3;
-            this.objectBuffers[array[i].bufferIndex].numItems = renderVerts.length / 3;  
+            this.objectBuffers[array[i].bufferIndex].numItems = vertices.length / 3;
+            // End
 
+            // Indices
+            this.objectIndexBuffers[this.objectIndexBuffers.length] = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.objectIndexBuffers[array[i].bufferIndex]);
+            var vertIndices = earcut(vertices, null, 3);
+            this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vertIndices), this.gl.STATIC_DRAW);
+            this.objectIndexBuffers[array[i].bufferIndex].itemSize = 1;
+            this.objectIndexBuffers[array[i].bufferIndex].numItems = vertIndices.length;
+            // End
+
+            // Colours
             this.objectColourBuffers[array[i].bufferIndex] = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.objectColourBuffers[array[i].bufferIndex]);
             colors = [];
-            for (var c = 0; c < renderVerts.length; c++) {
+            for (var c = 0; c < array[i].vertices.length; c++) {
               colors = colors.concat([array[i].colour.r / 255, array[i].colour.g / 255, array[i].colour.b / 255, array[i].colour.a / 255]);
             }
             this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colors), this.gl.STATIC_DRAW);
             this.objectColourBuffers[array[i].bufferIndex].itemSize = 4;
-            this.objectColourBuffers[array[i].bufferIndex].numItems = renderVerts.length / 3;
+            this.objectColourBuffers[array[i].bufferIndex].numItems = array[i].vertices.length / 3;
+            // End
         }
     }
 };
