@@ -52,7 +52,7 @@ LE.DirectionalLight = function(parameters) {
     /**
      * @property colour
      * @type Colour
-     * @default new LE.Colour(255, 255, 255, 255  
+     * @default new LE.Colour(255, 255, 255, 255)  
      */
     this.colour = parameters.colour || new LE.Colour(255, 255, 255, 255),
     /**

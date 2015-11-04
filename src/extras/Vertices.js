@@ -4,7 +4,6 @@
  * @class Vertices
  * @static
  */
-// Need to implement earcut.js into this code
 LE.Vertices = {
     /**
      * Creates and returns the vertices for a square
@@ -75,17 +74,25 @@ LE.Vertices = {
         return vertices;
     },
     /**
-     * Creates and returns the vertices for a trapezium - TO DO
+     * Creates and returns the vertices for a trapezium. A trapezium has a pair of parallel sides
      *
      * @method trapezium
+     * @param {Number} bottomWidth The bottom width of the trapzium
+     * @param {Number} topWidth The top width of the trapezium
+     * @param {Number} height The height between the bottom width and the top width
+     * @param {Number} topWidthX The X position of the top width
      * @return {Object} vertices
      * @static
      */
-    trapezium : function() {
-        // To do
+    trapezium : function(bottomWidth, topWidth, height, topWidthX) {
+        var vertices = [ {x: 0, y: 0} ];
+        vertices.push({x: topWidthX, y: height });
+        vertices.push({x: vertices[1].x + topWidth, y: vertices[1].y});
+        vertices.push({x: vertices[0].x + bottomWidth, y: vertices[0].y});
+        return vertices;
     },
     /**
-     * Creates and returns the vertices for a trapezoid - TO DO
+     * Creates and returns the vertices for a trapezoid. A trapezoid has no parallel sides - TO DO
      *
      * @method trapezoid
      * @return {Object} vertices
