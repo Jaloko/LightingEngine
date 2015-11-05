@@ -1,9 +1,11 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto);
+
 body {
-	font-family: Verdana;
+	font-family: Roboto;
 	font-size: 1em;
 	margin: 0;
 	padding: 0;
-	color: #a4a4a4;
+	color: #c5d0de;
 	background-color: #1b1b1b;
 }
 
@@ -21,17 +23,32 @@ ul {
 	list-style-type: none;
 	padding: 0;
 	margin: 0;
-	margin-left: 10px;
+
 }
 
-.title {
+ul li {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+#title {
 	padding: 10px;
 	padding-top: 20px;
 	padding-bottom: 20px;
-	margin: 5px;
 	text-align: center;
-	background-color: #1c1f26;
-	border-radius: 5px;
+	background-color: #333c47;
+}
+
+#footer {
+	position: absolute;
+	width: 100%;
+	text-align: center;
+	bottom: 0;
+	background-color: #333c47;
+	line-height: 40px;
+	height: 40px;
 }
 
 .subtitle {
@@ -41,31 +58,45 @@ ul {
 }
 
 .subtitle h1 {
-	color: #00ff5a;
 	font-size: 1.05em;
 	margin: 0;
 	padding: 0;	
 }
 
-.title h1 {
-	color: #00ff5a;
+#title h1 {
 	font-size: 1.1em;
 	margin: 0;
 	padding: 0;
 }
 
 .selected {
-	color: #5e5e5e;
+	background-color: #15191e;
+	border-radius: 5px;
+	color: #808080;
+}
+
+ul li a {
+	padding: 2px;
+	text-decoration: none;
+	color: #a4a4a4;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+ul li a:hover {
+	background-color: #15191e;
+	border-radius: 5px;
+	color: #808080;
+	cursor: pointer;
 }
 
 a {
+	color: #a4a4a4;
 	text-decoration: none;
-		color: #a4a4a4;
 }
 
 a:hover {
-	color: #ffffff;
-	cursor: pointer;
+	color: #808080;
 }
 
 #content {
@@ -78,7 +109,7 @@ a:hover {
 }
 
 #content-list {
-	overflow-y: auto;
+	margin-bottom: 60px;
 }
 
 #help-box {
